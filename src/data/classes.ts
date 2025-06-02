@@ -4,19 +4,19 @@ export const classes: Record<string, ClassData> = {
   evocador: {
     id: 'evocador',
     name: 'Evocador',
-    description: 'Mestres dos elementos primordiais, os Evocadores canalizam as forças da natureza através de conexões profundas com as essências elementais. Cada Evocador segue um Caminho Elemental específico.',
-    hitDie: 6,
-    hitPointsPerLevel: 6,
-    manaPointsBase: 10,
-    manaPointsPerLevel: 5,
+    description: 'Estudioso e praticante das artes elementais, aprendendo a sentir, chamar e moldar as energias primordiais de Elaria. Busca sintonia profunda com um dos seis elementos fundamentais.',
+    hitDie: 8,
+    hitPointsPerLevel: 4,
+    manaPointsBase: 6,
+    manaPointsPerLevel: 4,
     skillChoices: 3,
     availableSkills: [
-      'Arcano',
-      'Investigação',
-      'Medicina',
-      'Natureza',
+      'Misticismo',
+      'Intuição',
       'Percepção',
-      'Religião'
+      'Sobrevivência',
+      'Vontade',
+      'Investigação'
     ],
     subclasses: ['terra', 'agua', 'ar', 'fogo', 'luz', 'sombra']
   },
@@ -24,19 +24,20 @@ export const classes: Record<string, ClassData> = {
   tita: {
     id: 'tita',
     name: 'Titã',
-    description: 'Guerreiros poderosos que dominam o campo de batalha através de força bruta, resistência e presença intimidadora. Cada Titã segue um Arquétipo de Força que define seu estilo de combate.',
-    hitDie: 10,
-    hitPointsPerLevel: 10,
+    description: 'Personificação do poder primordial que reside no âmago de todos os seres: a pura força física e capacidade de resistir. Manifestação ambulante da Vontade Indomável e Resiliência Eterna.',
+    hitDie: 12,
+    hitPointsPerLevel: 6,
     manaPointsBase: 0,
     manaPointsPerLevel: 0,
-    skillChoices: 2,
+    vigorBase: 1, // Vigor = 1 + Constituição
+    skillChoices: 3,
     availableSkills: [
       'Atletismo',
+      'Fortitude',
       'Intimidação',
-      'Medicina',
+      'Luta',
       'Percepção',
-      'Sobrevivência',
-      'Fortitude'
+      'Sobrevivência'
     ],
     subclasses: ['baluarte', 'furia-primal', 'quebra-montanhas']
   },
@@ -44,21 +45,23 @@ export const classes: Record<string, ClassData> = {
   sentinela: {
     id: 'sentinela',
     name: 'Sentinela',
-    description: 'Especialistas em percepção, precisão e adaptação. Os Sentinelas são observadores natos que dominam tanto o combate à distância quanto a sobrevivência em ambientes hostis.',
+    description: 'Mestre da percepção, adaptação e precisão. Opera nas fronteiras confiando em habilidades aguçadas, conhecimento do terreno e ataques certeiros para superar desafios.',
     hitDie: 8,
-    hitPointsPerLevel: 8,
-    manaPointsBase: 0,
-    manaPointsPerLevel: 0,
+    hitPointsPerLevel: 4,
+    manaPointsBase: 4,
+    manaPointsPerLevel: 2,
+    keyAttribute: 'sabedoria', // Base, pode ser alterado por arquétipo
     skillChoices: 4,
     availableSkills: [
+      'Furtividade',
+      'Sobrevivência', 
+      'Investigação',
+      'Intuição',
       'Acrobatismo',
       'Atletismo',
-      'Furtividade',
-      'Investigação',
-      'Natureza',
-      'Percepção',
-      'Sobrevivência',
-      'Rastreamento'
+      'Reflexos',
+      'Ladinagem',
+      'Iniciativa'
     ],
     subclasses: ['rastreador', 'lamina-crepusculo', 'olho-vigilante']
   },
@@ -66,21 +69,22 @@ export const classes: Record<string, ClassData> = {
   elo: {
     id: 'elo',
     name: 'Elo',
-    description: 'Mestres da conexão humana, os Elos usam empatia, carisma e compreensão para influenciar, inspirar e unir pessoas. São líderes naturais e diplomatas habilidosos.',
+    description: 'Mestre da conexão, influência e empatia, canalizando a Chama Interior e o Sentir Profundo. Poder reside na capacidade de entender, inspirar, proteger e guiar outros.',
     hitDie: 8,
-    hitPointsPerLevel: 8,
-    manaPointsBase: 5,
-    manaPointsPerLevel: 3,
+    hitPointsPerLevel: 2,
+    manaPointsBase: 6,
+    manaPointsPerLevel: 4,
+    keyAttribute: 'carisma',
     skillChoices: 4,
     availableSkills: [
-      'Atuação',
+      'Diplomacia',
       'Enganação',
-      'História',
       'Intuição',
-      'Intimidação',
-      'Investigação',
-      'Persuasão',
-      'Religião'
+      'Atuação',
+      'Cura',
+      'Religião',
+      'Vontade',
+      'Percepção'
     ],
     subclasses: ['voz-harmonia', 'porta-voz-chama', 'guardiao-coracao']
   }
@@ -90,95 +94,98 @@ export const subclassData = {
   // Evocador - Caminhos Elementais
   terra: {
     name: 'Caminho da Terra',
-    description: 'Conectados à estabilidade e resistência da terra',
-    keyAttribute: 'constituicao',
-    level1Ability: 'Pele de Pedra: +1 redução de dano físico'
+    description: 'Canalizadores do poder bruto e estável do elemento Terra. Inspirados na Resiliência Eterna de Terrus.',
+    keyAttribute: 'sabedoria',
+    level1Ability: 'Sintonia Reforçada (Terra): +1 RD contra dano; Manifestações da Terra (2 escolhas); Sentido Sísmico'
   },
   agua: {
     name: 'Caminho da Água',
-    description: 'Mestres da fluidez e adaptação',
+    description: 'Mestres da fluidez, adaptabilidade e poder restaurador do elemento Água. Ligados à Ondina.',
     keyAttribute: 'sabedoria',
-    level1Ability: 'Cura Menor: Recupera 1d4+SAB PV uma vez por descanso'
+    level1Ability: 'Sintonia Reforçada (Água): Prender respiração por 5min, vantagem em Atletismo (Nadar)'
   },
   ar: {
     name: 'Caminho do Ar',
-    description: 'Livres como o vento, rápidos como a tempestade',
-    keyAttribute: 'destreza',
-    level1Ability: 'Rajada: Empurra inimigos 1,5m como ação bônus'
+    description: 'Domínio sobre os ventos e tempestades, movimento e liberdade.',
+    keyAttribute: 'inteligencia',
+    level1Ability: 'Sintonia Reforçada (Ar): Manifestações específicas do elemento Ar'
   },
   fogo: {
     name: 'Caminho do Fogo',
-    description: 'Portadores da chama primordial',
-    keyAttribute: 'forca',
-    level1Ability: 'Toque Flamejante: +1d4 dano de fogo em ataques corpo a corpo'
+    description: 'Mestres da chama primordial e energia destrutiva.',
+    keyAttribute: 'inteligencia',
+    level1Ability: 'Sintonia Reforçada (Fogo): Manifestações específicas do elemento Fogo'
   },
   luz: {
     name: 'Caminho da Luz',
-    description: 'Guardiões da clareza e esperança',
-    keyAttribute: 'inteligencia',
-    level1Ability: 'Chama Sagrada: Cria luz que cega inimigos por 1 turno'
+    description: 'Guardiões da clareza, revelação e proteção.',
+    keyAttribute: 'sabedoria',
+    level1Ability: 'Sintonia Reforçada (Luz): Manifestações específicas do elemento Luz'
   },
   sombra: {
     name: 'Caminho da Sombra',
-    description: 'Mestres dos mistérios e da sutileza',
-    keyAttribute: 'carisma',
-    level1Ability: 'Manto Sombrio: Invisibilidade por 1 turno, 1x por descanso'
+    description: 'Mestres dos mistérios, sutileza e poder das trevas.',
+    keyAttribute: 'inteligencia',
+    level1Ability: 'Sintonia Reforçada (Sombra): Manifestações específicas do elemento Sombra'
   },
 
   // Titã - Arquétipos de Força
   baluarte: {
     name: 'Baluarte',
-    description: 'Defensor inabalável, protetor do grupo',
-    passive: 'Presença Protetora: Aliados adjacentes recebem +1 CA',
-    abilities: ['Escudo Humano', 'Muralha Viva', 'Guarda Incansável']
+    description: 'Personificação da muralha intransponível, escudo inabalável que protege os mais fracos.',
+    passive: 'Presença Protetora: Aliados adjacentes recebem +1 RD contra ataques corpo a corpo',
+    abilities: ['Postura Defensiva', 'Proteger Aliado', 'Escudo Ecoante', 'Ancorar Posição']
   },
   'furia-primal': {
     name: 'Fúria Primal',
-    description: 'Guerreiro selvagem guiado por instintos',
-    passive: 'Instinto de Batalha: +1 dano quando com menos de 50% PV',
-    abilities: ['Rugido Intimidador', 'Golpe Selvagem', 'Berserker']
+    description: 'Abraça a Vontade Indomável em forma crua e explosiva. Canaliza emoções intensas em poder físico.',
+    passive: 'Ímpeto Selvagem: +1,5m movimento com metade PV; recupera 2V ao zerar inimigo',
+    abilities: ['Golpe Furioso', 'Grito de Guerra', 'Ignorar a Dor', 'Avanço Implacável']
   },
   'quebra-montanhas': {
     name: 'Quebra-Montanhas',
-    description: 'Destruidor de obstáculos e barreiras',
-    passive: 'Força Bruta: Dobra capacidade de carga e destruição',
-    abilities: ['Golpe Demolidor', 'Quebrar Defesas', 'Impacto Sísmico']
+    description: 'Especialista em força aplicada e destruição controlada.',
+    passive: 'Força Demolidora: Capacidades especiais de destruição',
+    abilities: ['Golpe Demolidor', 'Quebrar Defesas', 'Impacto Sísmico', 'Força Bruta']
   },
 
   // Sentinela - Arquétipos de Vigilância
   rastreador: {
     name: 'Rastreador dos Ermos',
-    description: 'Especialista em sobrevivência e rastreamento',
-    passive: 'Sobrevivente Nato: +2 em testes de Sobrevivência e Natureza',
-    abilities: ['Rastreamento Aprimorado', 'Camuflagem Natural', 'Tiro Certeiro']
+    description: 'Mestre da sobrevivência, caça e perseguição em ambientes selvagens.',
+    keyAttribute: 'sabedoria',
+    passive: 'Passo Leve na Mata: Ignora terreno difícil natural; treinamento em Sobrevivência',
+    abilities: ['Marca do Caçador', 'Disparo Preciso', 'Armadilha Improvisada', 'Companheiro Animal']
   },
   'lamina-crepusculo': {
     name: 'Lâmina do Crepúsculo',
-    description: 'Assassino silencioso da penumbra',
-    passive: 'Ataque Furtivo: +1d6 dano em ataques surpresa',
-    abilities: ['Golpe Sombrio', 'Movimento das Sombras', 'Ataque Letal']
+    description: 'Utiliza furtividade, agilidade e surpresa. Mestre da infiltração e combate rápido.',
+    keyAttribute: 'destreza',
+    passive: 'Dança das Sombras: +1,5m movimento em penumbra/escuridão; treinamento Furtividade',
+    abilities: ['Golpe Desorientador', 'Passo Fantasma', 'Ataque Furtivo', 'Visão Crepuscular']
   },
   'olho-vigilante': {
     name: 'Olho Vigilante',
-    description: 'Analista tático e investigador',
-    passive: 'Análise Tática: +2 em Percepção e Investigação',
-    abilities: ['Avaliar Fraquezas', 'Coordenar Ataque', 'Insight Tático']
+    description: 'Aprimora capacidades analíticas e perceptivas. Mestre da investigação e tática.',
+    keyAttribute: 'inteligencia',
+    passive: 'Análise Tática: Treinamento Investigação; INT para Iniciativa',
+    abilities: ['Estudar Oponente', 'Antecipar Movimento', 'Ponto Fraco', 'Leitura Rápida']
   },
 
   // Elo - Arquétipos de Ligação
   'voz-harmonia': {
     name: 'Voz da Harmonia',
-    description: 'Diplomata e pacificador',
-    abilities: ['Palavra Tranquilizadora', 'Mediar Conflito', 'Aura de Paz']
+    description: 'Diplomata e pacificador, mestre da resolução de conflitos.',
+    abilities: ['Palavra Tranquilizadora', 'Mediar Conflito', 'Aura de Paz', 'Harmonia Empática']
   },
   'porta-voz-chama': {
     name: 'Porta-Voz da Chama',
-    description: 'Líder inspirador em combate',
-    abilities: ['Grito de Guerra', 'Inspirar Coragem', 'Comando Tático']
+    description: 'Canaliza a Chama Interior para inspirar coragem, liderança e ação.',
+    abilities: ['Grito de Guerra', 'Inspirar Coragem', 'Comando Tático', 'Chama Motivadora']
   },
   'guardiao-coracao': {
     name: 'Guardião do Coração',
-    description: 'Protetor empático e curador espiritual',
-    abilities: ['Empatia Profunda', 'Escudo Emocional', 'Cura do Coração']
+    description: 'Protetor empático e curador espiritual, conecta-se profundamente com emoções.',
+    abilities: ['Empatia Profunda', 'Escudo Emocional', 'Cura do Coração', 'Vínculo Protetor']
   }
 }; 

@@ -4,14 +4,13 @@ export const races: Record<string, RaceData> = {
   alari: {
     id: 'alari',
     name: 'Alari',
-    description: 'Ligados ao elemento Terra, os Alari são conhecidos por sua resistência, paciência e conexão profunda com a natureza. Têm pele terrosa, olhos dourados e uma constituição robusta.',
-    attributeBonus: 'constituicao',
-    bonusValue: 2,
-    baseMovement: 9,
+    description: 'Descendentes míticos de Terrus, o Guardião dos Solos, os Alari foram os primeiros entre os povos sencientes a despertar em Elaria. Sua longa existência reflete a Resiliência Eterna, manifestando forte conexão com a natureza através do Sentir Profundo.',
+    attributeBonus: 'sabedoria',
+    bonusValue: 1,
+    baseMovement: 12,
     traits: [
-      'Resistência Natural: +1 bônus em testes de Fortitude',
-      'Conexão Telúrica: Sentem vibrações no solo em um raio de 3 metros',
-      'Tolerância: Não são afetados por condições climáticas adversas naturais'
+      'Herança de Terrus: +1 ponto de mana (PM) por nível e treinamento em Conhecimento (Natureza)',
+      'Sintonia Ambiental: Dificuldade para descansar completamente em ambientes urbanos densos'
     ],
     patron: 'Terrus, o Guardião dos Solos'
   },
@@ -19,14 +18,14 @@ export const races: Record<string, RaceData> = {
   roknar: {
     id: 'roknar',
     name: 'Roknar',
-    description: 'Conectados ao elemento Fogo, os Roknar possuem temperamento forte, paixão ardente e grande força física. Têm pele avermelhada, cabelos escuros e olhos como brasas.',
-    attributeBonus: 'forca',
-    bonusValue: 2,
-    baseMovement: 9,
+    description: 'Filhos míticos de Ignis, a Primeira Chama, os Roknar foram moldados pelo fogo e pela rocha nas profundezas das montanhas vulcânicas. Manifestam a Resiliência Eterna e a Vontade Indomável, sendo mestres da forja e engenharia.',
+    attributeBonus: 'constituicao',
+    bonusValue: 1,
+    baseMovement: 6,
     traits: [
-      'Fúria Ancestral: Uma vez por dia, podem entrar em fúria (+2 em Força por 1 minuto)',
-      'Resistência ao Calor: Imunes a efeitos de calor natural',
-      'Pele Resistente: Redução de 1 ponto em dano físico (mínimo 1)'
+      'Duro como Pedra: +3 pontos de vida no 1º nível e +1 ponto de vida por nível seguinte',
+      'Vida Soterrada: Visão no escuro e +1 em testes de Sobrevivência no subterrâneo',
+      'Passos Pesados: Deslocamento limitado a 6 metros devido ao tamanho e pernas curtas'
     ],
     patron: 'Ignis, a Primeira Chama'
   },
@@ -34,29 +33,27 @@ export const races: Record<string, RaceData> = {
   kain: {
     id: 'kain',
     name: 'Kain',
-    description: 'Mestres da Água, os Kain são adaptáveis, empáticos e fluidos em seus movimentos. Possuem tons azulados na pele, cabelos que parecem ondular e grande intuição.',
-    attributeBonus: 'sabedoria',
-    bonusValue: 2,
+    description: 'A raça mais difundida e enigmática de Elaria, os Kain manifestam um equilíbrio dinâmico de todas as seis Essências. São incrivelmente adaptáveis, resilientes e movidos por ambição, refletindo sua origem multifacetada.',
+    attributeBonus: 'escolha',
+    bonusValue: 1,
     baseMovement: 9,
     traits: [
-      'Respiração Aquática: Podem respirar debaixo d\'água',
-      'Natação Natural: Velocidade de natação igual ao deslocamento terrestre',
-      'Empatia Aquática: +2 em testes sociais com criaturas aquáticas'
+      'Versátil: Treinamento em duas perícias à escolha (não precisam ser da classe)',
+      'Potencial: Escolha uma arma específica e receba +1 em rolagens de dano com ela'
     ],
-    patron: 'Ondina, a Mãe das Águas'
+    patron: 'Nenhum/Todos - Origem Multifacetada'
   },
   
   faelan: {
     id: 'faelan',
     name: 'Faelan',
-    description: 'Conectados ao Ar, os Faelan são ágeis, curiosos e livres como o vento. Têm compleição delgada, cabelos claros que parecem flutuar e movimentos graciosos.',
+    description: 'Filhos esquivos de Zephyrus, o Senhor dos Ventos, os Faelan possuem compleição esguia e traços distintamente felinos. Carregam o Fluxo Incessante em sua agilidade e o Olhar Penetrante em seus sentidos aguçados.',
     attributeBonus: 'destreza',
-    bonusValue: 2,
-    baseMovement: 12,
+    bonusValue: 1,
+    baseMovement: 9,
     traits: [
-      'Agilidade Aérea: +3 metros de deslocamento base',
-      'Queda Suave: Reduzem dano de queda pela metade',
-      'Sentidos Aguçados: +1 bônus em testes de Percepção'
+      'Olhos Felinos: Visão na penumbra, mas 1 dado de desvantagem com luz intensa direta',
+      'Camuflagem Natural: Treinamento nas perícias Furtividade e Percepção'
     ],
     patron: 'Zephyrus, o Senhor dos Ventos'
   },
@@ -64,45 +61,44 @@ export const races: Record<string, RaceData> = {
   celeres: {
     id: 'celeres',
     name: 'Celeres',
-    description: 'Rápidos e adaptativos, os Celeres são mestres da velocidade e da precisão. Possuem traços felinos, reflexos apurados e grande destreza manual.',
-    attributeBonus: 'destreza',
+    description: 'Povo veloz e perceptivo ligado à Ondina, a Mãe das Águas. Possuem traços que lembram lebres, com orelhas longas e expressivas. Manifestam o Sentir Profundo através de intuição social e o Fluxo Incessante em sua rapidez.',
+    attributeBonus: 'carisma',
     bonusValue: 1,
     baseMovement: 12,
     traits: [
-      'Velocidade Felina: +3 metros de deslocamento',
-      'Reflexos Apurados: +1 bônus em Iniciativa',
-      'Escalada Natural: Velocidade de escalada igual à metade do deslocamento',
-      'Bônus adicional: +1 em Constituição'
-    ]
+      'Orelhas Atentas: Treinamento nas perícias Diplomacia e Intuição',
+      'Salto Ágil: Pode gastar 1 PM para ignorar penalidades de terreno difícil por 1 turno',
+      'Instinto de Presa: 1 dado de desvantagem em Diplomacia inicial com predadores naturais'
+    ],
+    patron: 'Ondina, a Mãe das Águas'
   },
   
   aurien: {
     id: 'aurien',
     name: 'Aurien',
-    description: 'Ligados à Luz, os Aurien irradiam sabedoria e serenidade. Têm pele dourada, cabelos luminosos e olhos que brilham com luz própria.',
+    description: 'Filhos de Lumina, a Guardiã da Aurora, elevados nas terras banhadas pela luz intensa. Carregam a Chama Interior em sua convicção e a clareza do Olhar Penetrante em sua busca pela verdade e conhecimento.',
     attributeBonus: 'inteligencia',
-    bonusValue: 2,
+    bonusValue: 1,
     baseMovement: 9,
     traits: [
-      'Aura Luminosa: Podem gerar luz suave em um raio de 3 metros',
-      'Resistência à Escuridão: Imunes a efeitos de medo causados por trevas',
-      'Conhecimento Ancestral: +1 perícia adicional à escolha no nível 1'
+      'Visão da Verdade: Vantagem em testes de Intuição para discernir mentiras e resistência contra Ilusões',
+      'Filho da Luz: Conhece e pode conjurar Luz à vontade'
     ],
-    patron: 'Lumina, a Senhora da Aurora'
+    patron: 'Lumina, a Guardiã da Aurora'
   },
   
   vesperi: {
     id: 'vesperi',
     name: 'Vesperi',
-    description: 'Conectados às Sombras, os Vesperi são misteriosos, perspicazes e habilidosos. Têm pele pálida, cabelos escuros e olhos profundos como a noite.',
-    attributeBonus: 'carisma',
-    bonusValue: 2,
+    description: 'Povo enigmático associado a Noctus, o Sábio das Sombras, elevados nas regiões de crepúsculo. São introspectivos, conhecidos por sua calma e afinidade com segredos, manifestando o Sentir Profundo e Olhar Penetrante únicos.',
+    attributeBonus: 'sabedoria',
+    bonusValue: 1,
     baseMovement: 9,
     traits: [
-      'Visão nas Trevas: Podem ver no escuro até 18 metros',
-      'Furtividade Natural: +2 bônus em testes de Furtividade',
-      'Resistência Mental: +1 bônus em testes contra efeitos mentais'
+      'Visão no Escuro: Enxerga na penumbra até 18m como luz plena, no escuro como penumbra',
+      'Manto das Sombras: Pode se esconder em penumbra; vantagem em Furtividade em baixa luz',
+      'Mente Serena: Vantagem em testes de resistência contra efeitos de Amedrontado'
     ],
-    patron: 'Noctus, o Guardião das Sombras'
+    patron: 'Noctus, o Sábio das Sombras'
   }
 }; 

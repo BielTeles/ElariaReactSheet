@@ -98,7 +98,7 @@ export interface RaceData {
   id: Race;
   name: string;
   description: string;
-  attributeBonus: keyof Attributes;
+  attributeBonus: keyof Attributes | 'escolha';
   bonusValue: number;
   baseMovement: number;
   traits: string[];
@@ -114,6 +114,8 @@ export interface ClassData {
   hitPointsPerLevel: number;
   manaPointsBase: number;
   manaPointsPerLevel: number;
+  vigorBase?: number;
+  keyAttribute?: string;
   skillChoices: number;
   availableSkills: string[];
   subclasses: Subclass[];
