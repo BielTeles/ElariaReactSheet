@@ -6,6 +6,7 @@ import AttributesStep from './steps/AttributesStep';
 import RaceStep from './steps/RaceStep';
 import ClassStep from './steps/ClassStep';
 import SubclassStep from './steps/SubclassStep';
+import SubclassAbilitiesStep from './steps/SubclassAbilitiesStep';
 import OriginStep from './steps/OriginStep';
 import DeityStep from './steps/DeityStep';
 import SkillsStep from './steps/SkillsStep';
@@ -29,11 +30,12 @@ const WizardContainer: React.FC = () => {
     { id: 2, name: 'Raça', component: RaceStep },
     { id: 3, name: 'Classe', component: ClassStep },
     { id: 4, name: 'Subclasse', component: SubclassStep },
-    { id: 5, name: 'Origem', component: OriginStep },
-    { id: 6, name: 'Divindade', component: DeityStep },
-    { id: 7, name: 'Perícias', component: SkillsStep },
-    { id: 8, name: 'Detalhes', component: PersonalDetailsStep },
-    { id: 9, name: 'Resumo', component: SummaryStep }
+    { id: 5, name: 'Habilidades', component: SubclassAbilitiesStep },
+    { id: 6, name: 'Origem', component: OriginStep },
+    { id: 7, name: 'Divindade', component: DeityStep },
+    { id: 8, name: 'Perícias', component: SkillsStep },
+    { id: 9, name: 'Detalhes', component: PersonalDetailsStep },
+    { id: 10, name: 'Resumo', component: SummaryStep }
   ];
 
   const getCurrentStepComponent = () => {
@@ -76,13 +78,15 @@ const WizardContainer: React.FC = () => {
         return !!characterData.mainClass;
       case 4: // Subclasse
         return !!characterData.subclass;
-      case 5: // Origem
+      case 5: // Habilidades de Subclasse
+        return characterData.selectedSubclassAbilities?.length === 2;
+      case 6: // Origem
         return !!characterData.origin;
-      case 6: // Divindade (opcional)
+      case 7: // Divindade (opcional)
         return true;
-      case 7: // Perícias
+      case 8: // Perícias
         return characterData.selectedSkills.length > 0;
-      case 8: // Detalhes
+      case 9: // Detalhes
         return !!characterData.personalDetails.name;
       default:
         return true;

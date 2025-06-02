@@ -138,6 +138,7 @@ export interface CharacterCreation {
   race?: Race;
   mainClass?: MainClass;
   subclass?: Subclass;
+  selectedSubclassAbilities?: string[];
   origin?: Origin;
   deity?: Deity;
   selectedSkills: string[];

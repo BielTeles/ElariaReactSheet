@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CharacterCreation, Subclass } from '../../../types/character';
 import { classes, subclassData } from '../../../data/classes';
-import { Flame, Mountain, Droplets, Wind, Sun, Moon } from 'lucide-react';
+import { Shield, Star, Zap } from 'lucide-react';
 
 interface SubclassStepProps {
   data: CharacterCreation;
@@ -50,33 +50,13 @@ const SubclassStep: React.FC<SubclassStepProps> = ({ data, onUpdate, onNext, onP
         <p className="text-slate-600 mb-6">Você precisa selecionar uma classe principal primeiro.</p>
         <button 
           onClick={onPrevious}
-          className="btn btn-secondary"
+          className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200"
         >
           Voltar para Classes
         </button>
       </div>
     );
   }
-
-  // Função para obter ícone do elemento
-  const getElementIcon = (subclassId: string) => {
-    const iconMap: { [key: string]: React.ReactNode } = {
-      terra: <Mountain className="w-5 h-5 text-amber-600" />,
-      agua: <Droplets className="w-5 h-5 text-blue-600" />,
-      ar: <Wind className="w-5 h-5 text-cyan-600" />,
-      fogo: <Flame className="w-5 h-5 text-red-600" />,
-      luz: <Sun className="w-5 h-5 text-yellow-600" />,
-      sombra: <Moon className="w-5 h-5 text-purple-600" />
-    };
-    return iconMap[subclassId];
-  };
-
-  // Função para obter cor do atributo
-  const getAttributeColor = (attribute: string) => {
-    return attribute === 'sabedoria' 
-      ? 'text-emerald-700 bg-emerald-100 border-emerald-200' 
-      : 'text-blue-700 bg-blue-100 border-blue-200';
-  };
 
   const getSubclassTypeTitle = () => {
     switch (data.mainClass) {
@@ -90,35 +70,21 @@ const SubclassStep: React.FC<SubclassStepProps> = ({ data, onUpdate, onNext, onP
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Cabeçalho */}
+      {/* Cabeçalho Padronizado */}
       <div className="text-center mb-8">
         <h3 className="text-3xl font-bold text-slate-800 mb-3">
-          Escolha seu {getSubclassTypeTitle()}
+          Escolha sua Especialização
         </h3>
-        <p className="text-lg text-slate-600">
-          Especialização da classe {classes[data.mainClass]?.name}
+        <p className="text-lg text-slate-600 mb-2">
+          {getSubclassTypeTitle()} - {classes[data.mainClass]?.name}
         </p>
-        
-        {/* Informações especiais para Evocador */}
-        {data.mainClass === 'evocador' && (
-          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-            <h4 className="font-bold text-indigo-800 mb-3 text-lg">Sistema de Atributos Elementais</h4>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-3 bg-white rounded-lg border border-emerald-200">
-                <h5 className="font-semibold text-emerald-800 mb-1">Sabedoria (Sentir Profundo)</h5>
-                <p className="text-emerald-700 text-sm">Terra, Água, Luz</p>
-              </div>
-              <div className="p-3 bg-white rounded-lg border border-blue-200">
-                <h5 className="font-semibold text-blue-800 mb-1">Inteligência (Olhar Penetrante)</h5>
-                <p className="text-blue-700 text-sm">Ar, Fogo, Sombra</p>
-              </div>
-            </div>
-          </div>
-        )}
+        <div className="text-sm text-slate-500">
+          Escolha uma especialização que define seu estilo de jogo
+        </div>
       </div>
 
-      {/* Lista de Subclasses */}
-      <div className="space-y-4">
+      {/* Lista de Subclasses - UI Padronizada */}
+      <div className="grid gap-4">
         {availableSubclasses.map((subclassId) => {
           const subclass = subclassData[subclassId];
           if (!subclass) return null;
@@ -129,85 +95,99 @@ const SubclassStep: React.FC<SubclassStepProps> = ({ data, onUpdate, onNext, onP
             <div
               key={subclassId}
               onClick={() => handleSubclassSelection(subclassId as Subclass)}
-              className={`relative bg-white rounded-lg border-2 cursor-pointer transition-all duration-300 hover:shadow-md ${
+              className={`relative bg-white rounded-lg border-2 cursor-pointer transition-all duration-300 p-6 ${
                 isSelected 
-                  ? 'border-blue-400 shadow-lg bg-blue-50' 
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-blue-400 bg-blue-50 shadow-lg' 
+                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
               }`}
             >
-              <div className="p-6">
-                {/* Cabeçalho com ícone e nome */}
-                <div className="flex items-start gap-4 mb-4">
-                  {data.mainClass === 'evocador' && (
-                    <div className="flex-shrink-0 p-2 bg-gray-100 rounded-lg">
-                      {getElementIcon(subclassId)}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-xl font-bold text-slate-800">{subclass.name}</h4>
-                      {subclass.keyAttribute && (
-                        <span className={`inline-block px-3 py-1 text-xs rounded-full font-medium border ${getAttributeColor(subclass.keyAttribute)}`}>
-                          {subclass.keyAttribute.charAt(0).toUpperCase() + subclass.keyAttribute.slice(1)}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-slate-600 leading-relaxed">{subclass.description}</p>
-                  </div>
+              {/* Cabeçalho */}
+              <div className="flex items-start gap-4 mb-4">
+                <div className={`flex-shrink-0 p-2 rounded-lg ${
+                  isSelected ? 'bg-blue-200 text-blue-700' : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <Shield className="w-5 h-5" />
                 </div>
-
-                {/* Grade de informações */}
-                <div className="grid gap-4">
-                  {/* Habilidades de Nível 1 */}
-                  {subclass.level1Ability && (
-                    <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <h5 className="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
-                        ⭐ Habilidades de Nível 1
-                      </h5>
-                      <p className="text-sm text-yellow-700">{subclass.level1Ability}</p>
-                    </div>
-                  )}
-
-                  {/* Habilidade Passiva */}
-                  {subclass.passive && (
-                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <h5 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                        🛡️ Habilidade Passiva
-                      </h5>
-                      <p className="text-sm text-gray-700">{subclass.passive}</p>
-                    </div>
-                  )}
-
-                  {/* Manifestações/Habilidades Disponíveis */}
-                  {subclass.abilities && subclass.abilities.length > 0 && (
-                    <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
-                      <h5 className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
-                        ⚡ {data.mainClass === 'evocador' ? 'Manifestações (Escolha 2)' : 'Habilidades Disponíveis'}
-                      </h5>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {subclass.abilities.map((ability, index) => (
-                          <div
-                            key={index}
-                            className="px-3 py-2 bg-white text-orange-800 text-sm rounded-md border border-orange-200 text-center font-medium"
-                          >
-                            {ability}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="text-xl font-bold text-slate-800">{subclass.name}</h4>
+                    {subclass.keyAttribute && (
+                      <span className="inline-block px-3 py-1 text-xs rounded-full font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                        {subclass.keyAttribute.charAt(0).toUpperCase() + subclass.keyAttribute.slice(1)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-600 leading-relaxed text-sm">{subclass.description}</p>
                 </div>
               </div>
 
-              {/* Indicador de seleção */}
+              {/* Informações em Grade */}
+              <div className="grid gap-3">
+                {/* Habilidade de Nível 1 */}
+                {subclass.level1Ability && (
+                  <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <h5 className="font-semibold text-yellow-800 mb-1 flex items-center gap-2 text-sm">
+                      <Star className="w-4 h-4" />
+                      Habilidade de Nível 1
+                    </h5>
+                    <p className="text-xs text-yellow-700">{subclass.level1Ability}</p>
+                  </div>
+                )}
+
+                {/* Habilidade Passiva */}
+                {subclass.passive && (
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <h5 className="font-semibold text-gray-800 mb-1 flex items-center gap-2 text-sm">
+                      <Shield className="w-4 h-4" />
+                      Habilidade Passiva
+                    </h5>
+                    <p className="text-xs text-gray-700">{subclass.passive}</p>
+                  </div>
+                )}
+
+                {/* Habilidades Disponíveis */}
+                {subclass.abilities && subclass.abilities.length > 0 && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <h5 className="font-semibold text-blue-800 mb-2 flex items-center gap-2 text-sm">
+                      <Zap className="w-4 h-4" />
+                      Habilidades Disponíveis (Escolha 2)
+                    </h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                      {subclass.abilities.slice(0, 4).map((ability, index) => (
+                        <div
+                          key={index}
+                          className="px-2 py-1 bg-white text-blue-800 text-xs rounded border border-blue-200 text-center font-medium"
+                        >
+                          {ability}
+                        </div>
+                      ))}
+                      {subclass.abilities.length > 4 && (
+                        <div className="px-2 py-1 bg-white text-blue-600 text-xs rounded border border-blue-200 text-center font-medium italic">
+                          +{subclass.abilities.length - 4} mais...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Indicador de Seleção */}
               {isSelected && (
-                <div className="absolute top-4 right-4 px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full border border-blue-300">
-                  ✓ Selecionado
+                <div className="absolute top-4 right-4 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">✓</span>
                 </div>
               )}
             </div>
           );
         })}
+      </div>
+
+      {/* Informação de Próximo Passo */}
+      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+        <h5 className="font-semibold text-green-800 mb-2">💡 Próximo Passo</h5>
+        <p className="text-green-700 text-sm">
+          Após escolher sua especialização, você poderá selecionar as habilidades específicas que deseja aprender.
+        </p>
       </div>
 
       {/* Navegação */}
@@ -218,6 +198,15 @@ const SubclassStep: React.FC<SubclassStepProps> = ({ data, onUpdate, onNext, onP
         >
           ← Anterior
         </button>
+        
+        <div className="text-center">
+          {!selectedSubclass && (
+            <p className="text-sm text-orange-600">
+              Selecione uma especialização para continuar
+            </p>
+          )}
+        </div>
+
         <button 
           onClick={onNext} 
           disabled={!selectedSubclass}
