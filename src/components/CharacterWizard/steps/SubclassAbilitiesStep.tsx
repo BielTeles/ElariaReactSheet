@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CharacterCreation } from '../../../types/character';
 import { classes, subclassData } from '../../../data/classes';
-import { Zap, Star, Sparkles } from 'lucide-react';
+import { subclassAbilities } from '../../../data/abilities';
+import { Zap, Star, Sparkles, Clock, Target, Flame } from 'lucide-react';
 
 interface SubclassAbilitiesStepProps {
   data: CharacterCreation;
@@ -130,6 +131,46 @@ const SubclassAbilitiesStep: React.FC<SubclassAbilitiesStepProps> = ({
     return `Como ${subclass?.name}, você pode escolher ${maxSelections} habilidades que definem sua especialização.`;
   };
 
+  const getAbilityDetails = (abilityName: string) => {
+    return subclassAbilities[abilityName];
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'ação':
+        return <Target className="w-4 h-4" />;
+      case 'ação bônus':
+        return <Zap className="w-4 h-4" />;
+      case 'reação':
+        return <Sparkles className="w-4 h-4" />;
+      case 'passivo':
+      case 'passivo/gatilho':
+        return <Star className="w-4 h-4" />;
+      case 'ritual':
+        return <Clock className="w-4 h-4" />;
+      default:
+        return <Flame className="w-4 h-4" />;
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'ação':
+        return 'text-red-600 bg-red-100';
+      case 'ação bônus':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'reação':
+        return 'text-blue-600 bg-blue-100';
+      case 'passivo':
+      case 'passivo/gatilho':
+        return 'text-green-600 bg-green-100';
+      case 'ritual':
+        return 'text-purple-600 bg-purple-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Cabeçalho */}
@@ -147,10 +188,11 @@ const SubclassAbilitiesStep: React.FC<SubclassAbilitiesStepProps> = ({
       </div>
 
       {/* Opções de Habilidades */}
-      <div className="grid gap-4">
+      <div className="grid gap-6">
         {availableAbilities.map((ability, index) => {
           const isSelected = selectedAbilities.includes(ability);
           const isDisabled = !isSelected && selectedAbilities.length >= maxSelections;
+          const abilityDetails = getAbilityDetails(ability);
           
           return (
             <div
@@ -165,8 +207,8 @@ const SubclassAbilitiesStep: React.FC<SubclassAbilitiesStepProps> = ({
               }`}
             >
               <div className="flex items-start gap-4">
-                {/* Ícone */}
-                <div className={`flex-shrink-0 p-2 rounded-lg ${
+                {/* Ícone da habilidade */}
+                <div className={`flex-shrink-0 p-3 rounded-lg ${
                   isSelected 
                     ? 'bg-blue-200 text-blue-700' 
                     : 'bg-gray-100 text-gray-600'
@@ -174,21 +216,66 @@ const SubclassAbilitiesStep: React.FC<SubclassAbilitiesStepProps> = ({
                   {getAbilityIcon(index)}
                 </div>
 
-                {/* Conteúdo */}
+                {/* Conteúdo principal */}
                 <div className="flex-1">
-                  <h4 className="text-lg font-bold text-slate-800 mb-2">{ability}</h4>
-                  <p className="text-slate-600 text-sm">
-                    {isEvocador 
-                      ? `Uma manifestação do poder elemental que permite controlar e moldar as energias de ${subclass?.name.replace('Caminho d', '').replace('a ', '').replace('o ', '')}.`
-                      : `Uma habilidade especializada que define sua maestria como ${subclass?.name}.`
-                    }
+                  {/* Header com nome e tipo */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <h4 className="text-xl font-bold text-slate-800">{ability}</h4>
+                    {abilityDetails?.type && (
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(abilityDetails.type)}`}>
+                        {getTypeIcon(abilityDetails.type)}
+                        {abilityDetails.type}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Metadados da habilidade */}
+                  {abilityDetails && (
+                    <div className="flex flex-wrap gap-4 mb-3 text-sm text-slate-600">
+                      {abilityDetails.cost && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Custo:</span>
+                          <span className="bg-slate-100 px-2 py-1 rounded text-xs font-mono">
+                            {abilityDetails.cost}
+                          </span>
+                        </div>
+                      )}
+                      {abilityDetails.range && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Alcance:</span>
+                          <span className="bg-slate-100 px-2 py-1 rounded text-xs">
+                            {abilityDetails.range}
+                          </span>
+                        </div>
+                      )}
+                      {abilityDetails.duration && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Duração:</span>
+                          <span className="bg-slate-100 px-2 py-1 rounded text-xs">
+                            {abilityDetails.duration}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Descrição da habilidade */}
+                  <p className="text-slate-700 text-sm leading-relaxed mb-3">
+                    {abilityDetails?.description || `Uma habilidade especializada da ${subclass?.name}.`}
                   </p>
+
+                  {/* Flavor text */}
+                  {abilityDetails?.flavorText && (
+                    <p className="text-slate-500 text-xs italic border-l-2 border-slate-300 pl-3">
+                      {abilityDetails.flavorText}
+                    </p>
+                  )}
                 </div>
 
                 {/* Indicador de seleção */}
                 {isSelected && (
-                  <div className="absolute top-4 right-4 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">✓</span>
+                  <div className="absolute top-4 right-4 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-white text-sm font-bold">✓</span>
                   </div>
                 )}
               </div>
