@@ -133,20 +133,35 @@ export interface SubclassData {
 
 // Interface para criação de personagem (wizard)
 export interface CharacterCreation {
-  step: number;
-  attributes: Partial<Attributes>;
-  race?: Race;
-  mainClass?: MainClass;
-  subclass?: Subclass;
+  // Atributos
+  attributes: Record<string, number>;
+  
+  // Raça
+  race?: string;
+  
+  // Classe
+  mainClass?: string;
+  subclass?: string;
+  
+  // Origem
+  origin?: string;
+  
+  // Divindade/Patrono
+  deity?: string | null;
+  
+  // Perícias
+  selectedSkills?: string[];
+  selectedClassSkills?: string[];
+  selectedRaceSkills?: string[];
+  
+  // Habilidades da Subclasse
   selectedSubclassAbilities?: string[];
-  origin?: Origin;
-  deity?: Deity;
-  selectedSkills: string[];
-  equipment: Equipment[];
-  personalDetails: {
+  
+  // Detalhes Pessoais
+  personalDetails?: {
     name?: string;
-    age?: number;
-    height?: string;
-    backstory?: string;
+    appearance?: string;
+    personality?: string;
+    background?: string;
   };
 } 

@@ -44,27 +44,27 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({ data, onUpdat
           
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Idade
+              Aparência
             </label>
             <input
-              type="number"
-              value={details.age || ''}
-              onChange={(e) => handleChange('age', e.target.value)}
+              type="text"
+              value={details.appearance || ''}
+              onChange={(e) => handleChange('appearance', e.target.value)}
               className="input-field"
-              placeholder="Anos..."
+              placeholder="Descreva a aparência..."
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Altura
+              Personalidade
             </label>
             <input
               type="text"
-              value={details.height || ''}
-              onChange={(e) => handleChange('height', e.target.value)}
+              value={details.personality || ''}
+              onChange={(e) => handleChange('personality', e.target.value)}
               className="input-field"
-              placeholder="Ex: 1,75m"
+              placeholder="Traços de personalidade..."
             />
           </div>
         </div>
@@ -74,8 +74,8 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({ data, onUpdat
             História Pessoal
           </label>
           <textarea
-            value={details.backstory || ''}
-            onChange={(e) => handleChange('backstory', e.target.value)}
+            value={details.background || ''}
+            onChange={(e) => handleChange('background', e.target.value)}
             rows={4}
             className="input-field"
             placeholder="Conte a história do seu personagem..."

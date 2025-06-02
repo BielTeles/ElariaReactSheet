@@ -47,7 +47,7 @@ export const origins: Record<string, OriginData> = {
     id: 'erudito-biblioteca',
     name: 'Erudito da Grande Biblioteca',
     description: 'Você dedicou uma parte significativa de sua vida aos estudos dentro dos muros da Grande Biblioteca de Elaria, em Harmonia. Seja como estudante formal, assistente de pesquisador ou autodidata, você adquiriu vasto conhecimento teórico sobre história, culturas, magia ou outros assuntos.',
-    trainedSkills: ['Investigação', 'Misticismo'],
+    trainedSkills: ['Investigação', 'Conhecimento'],
     benefit: {
       name: 'Conhecimento Enciclopédico',
       description: 'Uma vez por sessão de jogo, você pode declarar que pesquisou extensivamente sobre um tópico específico encontrado durante a aventura. Faça um teste de Inteligência (Investigação): Sucesso Normal para tópicos comuns, Bom para raros, Extremo para muito obscuros. Se passar, você se lembra de informação útil sobre o tópico.'

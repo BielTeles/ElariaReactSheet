@@ -1,30 +1,22 @@
 import React, { useState } from 'react';
-import { CharacterCreation, Origin } from '../../../types/character';
+import { CharacterCreation } from '../../../types/character';
+import { origins } from '../../../data/origins';
 
 interface OriginStepProps {
   data: CharacterCreation;
   onUpdate: (data: CharacterCreation) => void;
-  onNext: () => void;
-  onPrevious: () => void;
 }
 
 const OriginStep: React.FC<OriginStepProps> = ({ data, onUpdate }) => {
-  const [selectedOrigin, setSelectedOrigin] = useState<Origin | undefined>(data.origin);
+  const [selectedOrigin, setSelectedOrigin] = useState<string | undefined>(data.origin);
 
-  const handleOriginSelection = (origin: Origin) => {
-    setSelectedOrigin(origin);
+  const handleOriginSelection = (originId: string) => {
+    setSelectedOrigin(originId);
     onUpdate({
       ...data,
-      origin
+      origin: originId
     });
   };
-
-  const origins: { id: Origin; name: string }[] = [
-    { id: 'sobrevivente-brasas', name: 'Sobrevivente do Círculo de Brasas' },
-    { id: 'guarda-harmonia', name: 'Guarda de Harmonia' },
-    { id: 'iniciado-florestas', name: 'Iniciado das Florestas' },
-    { id: 'erudito-biblioteca', name: 'Erudito da Biblioteca' }
-  ];
 
   return (
     <div className="space-y-8">
@@ -34,7 +26,7 @@ const OriginStep: React.FC<OriginStepProps> = ({ data, onUpdate }) => {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        {origins.map((origin) => (
+        {Object.values(origins).map((origin) => (
           <div
             key={origin.id}
             onClick={() => handleOriginSelection(origin.id)}
@@ -43,7 +35,7 @@ const OriginStep: React.FC<OriginStepProps> = ({ data, onUpdate }) => {
             }`}
           >
             <h4 className="text-lg font-bold text-slate-800">{origin.name}</h4>
-            <p className="text-sm text-slate-600">Descrição da origem</p>
+            <p className="text-sm text-slate-600">{origin.description}</p>
           </div>
         ))}
       </div>

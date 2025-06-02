@@ -18,11 +18,7 @@ const WizardContainer: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   
   const [characterData, setCharacterData] = useState<CharacterCreation>({
-    step: 1,
-    attributes: {},
-    selectedSkills: [],
-    equipment: [],
-    personalDetails: {}
+    attributes: {}
   });
 
   const steps = [
@@ -85,9 +81,9 @@ const WizardContainer: React.FC = () => {
       case 7: // Divindade (opcional)
         return true;
       case 8: // Perícias
-        return characterData.selectedSkills.length > 0;
+        return (characterData.selectedClassSkills?.length || 0) > 0;
       case 9: // Detalhes
-        return !!characterData.personalDetails.name;
+        return !!characterData.personalDetails?.name;
       default:
         return true;
     }

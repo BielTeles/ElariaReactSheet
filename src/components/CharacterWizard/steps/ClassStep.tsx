@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Zap } from 'lucide-react';
-import { CharacterCreation, MainClass } from '../../../types/character';
+import { CharacterCreation } from '../../../types/character';
 import { classes } from '../../../data/classes';
 
 interface ClassStepProps {
@@ -11,9 +11,9 @@ interface ClassStepProps {
 }
 
 const ClassStep: React.FC<ClassStepProps> = ({ data, onUpdate, onNext, onPrevious }) => {
-  const [selectedClass, setSelectedClass] = useState<MainClass | undefined>(data.mainClass);
+  const [selectedClass, setSelectedClass] = useState<string | undefined>(data.mainClass);
 
-  const handleClassSelection = (classId: MainClass) => {
+  const handleClassSelection = (classId: string) => {
     setSelectedClass(classId);
     onUpdate({
       ...data,

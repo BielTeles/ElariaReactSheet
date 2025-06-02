@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CharacterCreation, Subclass } from '../../../types/character';
+import { CharacterCreation } from '../../../types/character';
 import { classes, subclassData } from '../../../data/classes';
 import { Shield, Star, Zap } from 'lucide-react';
 
@@ -11,7 +11,7 @@ interface SubclassStepProps {
 }
 
 const SubclassStep: React.FC<SubclassStepProps> = ({ data, onUpdate, onNext, onPrevious }) => {
-  const [selectedSubclass, setSelectedSubclass] = useState<Subclass | undefined>(data.subclass);
+  const [selectedSubclass, setSelectedSubclass] = useState<string | undefined>(data.subclass);
 
   // Obter subclasses disponíveis baseadas na classe selecionada
   const getAvailableSubclasses = () => {
@@ -21,11 +21,11 @@ const SubclassStep: React.FC<SubclassStepProps> = ({ data, onUpdate, onNext, onP
     return classData ? classData.subclasses : [];
   };
 
-  const handleSubclassSelection = (subclass: Subclass) => {
-    setSelectedSubclass(subclass);
+  const handleSubclassSelection = (subclassId: string) => {
+    setSelectedSubclass(subclassId);
     onUpdate({
       ...data,
-      subclass
+      subclass: subclassId
     });
   };
 
@@ -33,7 +33,7 @@ const SubclassStep: React.FC<SubclassStepProps> = ({ data, onUpdate, onNext, onP
 
   // Limpar subclasse selecionada se mudou de classe
   useEffect(() => {
-    if (data.subclass && !availableSubclasses.includes(data.subclass)) {
+    if (data.subclass && !availableSubclasses.includes(data.subclass as any)) {
       setSelectedSubclass(undefined);
       onUpdate({
         ...data,
@@ -94,7 +94,7 @@ const SubclassStep: React.FC<SubclassStepProps> = ({ data, onUpdate, onNext, onP
           return (
             <div
               key={subclassId}
-              onClick={() => handleSubclassSelection(subclassId as Subclass)}
+              onClick={() => handleSubclassSelection(subclassId)}
               className={`relative bg-white rounded-lg border-2 cursor-pointer transition-all duration-300 p-6 ${
                 isSelected 
                   ? 'border-blue-400 bg-blue-50 shadow-lg' 

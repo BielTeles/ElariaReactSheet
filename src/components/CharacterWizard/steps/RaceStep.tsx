@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Users, Star, Move } from 'lucide-react';
-import { CharacterCreation, Race } from '../../../types/character';
+import { CharacterCreation } from '../../../types/character';
 import { races } from '../../../data/races';
 
 interface RaceStepProps {
@@ -11,9 +11,9 @@ interface RaceStepProps {
 }
 
 const RaceStep: React.FC<RaceStepProps> = ({ data, onUpdate, onNext, onPrevious }) => {
-  const [selectedRace, setSelectedRace] = useState<Race | undefined>(data.race);
+  const [selectedRace, setSelectedRace] = useState<string | undefined>(data.race);
 
-  const handleRaceSelection = (raceId: Race) => {
+  const handleRaceSelection = (raceId: string) => {
     setSelectedRace(raceId);
     onUpdate({
       ...data,
