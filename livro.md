@@ -659,7 +659,75 @@ Ao escolher este Arquétipo no **1º nível**, você ganha a habilidade **Ímpet
 
 *(Habilidades de níveis seguintes do Arquétipo da Fúria Primal serão detalhadas posteriormente).*
 
+#### Quebra-Montanhas
+ *“Não há obstáculo que não possa ser derrubado, nem
+ defesa que não possa ser rompida. Apenas é preciso
+ aplicar força no lugar certo.”*
 
+ O Quebra-Montanhas é um Titã que foca sua imensa
+ força não apenas em combate direto, mas na aplicação
+ de poder bruto para superar obstáculos físicos e
+ destruir as defesas inimigas. Combinando a Vontade
+ Indomável com uma compreensão prática da
+ Resiliência Eterna (tanto a sua quanto a dos materiais),
+ este Arquétipo especializa-se no uso de armas pesadas
+ de duas mãos e em técnicas para romper armaduras,
+ escudos e até mesmo o terreno. São a força de choque
+ que abre caminho, o aríete imparável que derruba
+ portões e muralhas.
+
+ Ao escolher este Arquétipo no 1º nível, você ganha a
+ habilidade Golpe Destruidor e escolhe duas das
+ Habilidades de Arquétipo listadas abaixo, além das
+ habilidades base do Titã. As habilidades deste arquétipo
+ usam Pontos de Vigor (V).
+
+ **Quebrar Escudo:** (Ação de Ataque, 1 V) Ao fazer um
+ ataque corpo a corpo contra um oponente
+ empunhando um escudo, você pode gastar 1 V para
+ focar seu golpe no escudo. Se o ataque acertar (CD
+ Bom - Força), em vez de causar dano normal, o
+ escudo do oponente é destruido.
+
+ Firmeza da Montanha: (Ação Bônus, 2 V) Você
+ planta seus pés firmemente, canalizando a
+ resiliência da pedra. Até o início do seu próximo
+ turno, você ganha Redução de Dano (RD) 2 contra
+ todos os tipos de dano, mas seu deslocamento é
+ reduzido a 0.
+
+ (Habilidades de níveis seguintes do Arquétipo
+ Quebra-Montanhas serão detalhadas posteriormente).
+ 
+ Golpe Destruidor (Nível 1)
+
+ Sua força é focada em romper defesas. Quando você
+ acerta um ataque corpo a corpo com uma arma
+ pesada (de duas mãos), você ignora 1 ponto da
+ Redução de Dano (RD) do alvo, se houver.
+ Habilidades do Arquétipo (Nível 1 - Escolha Duas)
+
+
+ Impacto Arrasador: (Ação, 1 V) Você  realiza um único ataque corpo a corpo com uma arma pesada de duas mãos. Se acertar, além do dano normal, o ataque causa dano adicional igual a Força e o alvo deve fazer um Teste de Fortitude (CD Normal) ou ficará Atordoado por 1 rodada. 
+
+Rompante Poderoso: (Ação de Movimento) Você avança com força
+ total. Você pode se mover até seu deslocamento e realizar um teste de Força (Atletismo) com vantagem para tentar derrubar um portão, parede frágil ou outro obstáculo físico similar no seu caminho. Se você terminar este movimento adjacente a uma criatura hostil, pode fazer um ataque corpo a corpo contra ela como ação livre
+
+ Quebrar Escudo: (Ação de Ataque, 1 V) Ao fazer um
+ ataque corpo a corpo contra um oponente
+ empunhando um escudo, você pode gastar 1 V para
+ focar seu golpe no escudo. Se o ataque acertar (CD
+ Bom - Força), em vez de causar dano normal, o
+ escudo do oponente é destruido.
+
+ Firmeza da Montanha: (Ação Bônus, 2 V) Você
+ planta seus pés firmemente, canalizando a
+ resiliência da pedra. Até o início do seu próximo
+ turno, você ganha Redução de Dano (RD) 2 contra
+ todos os tipos de dano, mas seu deslocamento é
+ reduzido a 0.
+ (Habilidades de níveis seguintes do Arquétipo
+ Quebra-Montanhas serão detalhadas posteriormente).
 
 <br>
 

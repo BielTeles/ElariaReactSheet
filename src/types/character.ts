@@ -12,15 +12,15 @@ export interface Attributes {
 export type Race = 'alari' | 'roknar' | 'kain' | 'faelan' | 'celeres' | 'aurien' | 'vesperi';
 
 // Tipos de classes principais
-export type MainClass = 'evocador' | 'tita' | 'sentinela' | 'elo';
+export type MainClass = 'evocador' | 'titã' | 'sentinela' | 'elo';
 
 // Tipos de subclasses/caminhos
 export type EvocadorPath = 'terra' | 'agua' | 'ar' | 'fogo' | 'luz' | 'sombra';
-export type TitaArchetype = 'baluarte' | 'furia-primal' | 'quebra-montanhas';
+export type TitãArchetype = 'baluarte' | 'furia-primal' | 'quebra-montanhas';
 export type SentinelaArchetype = 'rastreador' | 'lamina-crepusculo' | 'olho-vigilante';
 export type EloArchetype = 'voz-harmonia' | 'porta-voz-chama' | 'guardiao-coracao';
 
-export type Subclass = EvocadorPath | TitaArchetype | SentinelaArchetype | EloArchetype;
+export type Subclass = EvocadorPath | TitãArchetype | SentinelaArchetype | EloArchetype;
 
 // Tipos de origens
 export type Origin = 'sobrevivente-brasas' | 'guarda-harmonia' | 'iniciado-florestas' | 
@@ -119,6 +119,16 @@ export interface ClassData {
   skillChoices: number;
   availableSkills: string[];
   subclasses: Subclass[];
+}
+
+// Interface para dados de subclasse
+export interface SubclassData {
+  name: string;
+  description: string;
+  keyAttribute?: string;
+  passive?: string;
+  level1Ability?: string;
+  abilities?: string[];
 }
 
 // Interface para criação de personagem (wizard)

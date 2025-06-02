@@ -26,14 +26,13 @@ const AttributesStep: React.FC<AttributesStepProps> = ({ data, onUpdate, onNext,
   
   // Sistema de compra por pontos do Elaria RPG
   const basePoints = 6;
-  const bonusPoints = 1; // Se reduzir um atributo para -1
   const minValue = -1;
   const maxValue = 10; // Praticamente impossível com 6-7 pontos, mas vamos limitar para a interface
   
   // Tabela de custo total por valor (conforme o livro)
   const getTotalCost = (value: number): number => {
     const costs: { [key: number]: number } = {
-      [-1]: -1,  // Reduzir para -1 concede +1 ponto
+      [-1]: 0,   // Custo 0, mas ganha +1 ponto nos máximos
       0: 0,
       1: 1,      // 1
       2: 3,      // 1+2
@@ -118,7 +117,7 @@ const AttributesStep: React.FC<AttributesStepProps> = ({ data, onUpdate, onNext,
 
   // Pontos máximos disponíveis (6 base + 1 se tiver atributo em -1)
   const getMaxPoints = (): number => {
-    return basePoints + (getNegativeAttributesCount() > 0 ? bonusPoints : 0);
+    return basePoints + (getNegativeAttributesCount() > 0 ? 1 : 0);
   };
 
   const canIncrease = (attr: keyof Attributes): boolean => {
@@ -176,7 +175,7 @@ const AttributesStep: React.FC<AttributesStepProps> = ({ data, onUpdate, onNext,
       <div className="text-center">
         <h3 className="text-2xl font-bold text-slate-800 mb-2">Distribuição de Atributos</h3>
         <p className="text-slate-600">
-          Sistema Elaria RPG: {basePoints} pontos base (+{bonusPoints} se reduzir um atributo para -1)
+          Sistema Elaria RPG: {basePoints} pontos base
         </p>
       </div>
 
@@ -190,7 +189,7 @@ const AttributesStep: React.FC<AttributesStepProps> = ({ data, onUpdate, onNext,
             </p>
             {getNegativeAttributesCount() > 0 && (
               <p className="text-xs text-fogo-600 mt-1">
-                Bônus ativo: +{bonusPoints} ponto por atributo em -1
+                Bônus ativo: +1 ponto por atributo em -1
               </p>
             )}
           </div>
@@ -323,8 +322,8 @@ const AttributesStep: React.FC<AttributesStepProps> = ({ data, onUpdate, onNext,
               </div>
               
               <div className="text-center">
-                <span className={`text-sm ${cost < 0 ? 'text-natureza-600' : 'text-slate-500'}`}>
-                  {cost < 0 ? `+${Math.abs(cost)} pontos` : `Custo: ${cost} pontos`}
+                <span className={`text-sm ${cost === 0 && value === -1 ? 'text-natureza-600' : 'text-slate-500'}`}>
+                  {value === -1 ? 'Concede +1 ponto bônus' : `Custo: ${cost} pontos`}
                 </span>
               </div>
             </div>
@@ -345,15 +344,18 @@ const AttributesStep: React.FC<AttributesStepProps> = ({ data, onUpdate, onNext,
             </thead>
             <tbody>
               <tr>
-                <td className="font-semibold py-2">Custo Total</td>
-                <td className="text-natureza-600">-1</td>
+                <td className="font-semibold py-2">Custo</td>
+                <td className="text-natureza-600">0*</td>
                 <td>0</td><td>1</td><td>3</td><td>6</td><td>10</td><td>15</td><td>21</td><td>28</td><td>36</td>
               </tr>
             </tbody>
           </table>
         </div>
         <p className="text-xs text-slate-500 mt-2">
-          * Valores acima de 3 são muito difíceis de alcançar com 6-7 pontos iniciais
+          * Valor -1 tem custo 0 mas concede +1 ponto bônus (máximo 1 atributo pode ter -1)
+        </p>
+        <p className="text-xs text-slate-500">
+          ** Valores acima de 3 são muito difíceis de alcançar com 6-7 pontos iniciais
         </p>
       </div>
 
