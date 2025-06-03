@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import CharacterList from './pages/CharacterList';
 import CharacterCreation from './pages/CharacterCreation';
 import CharacterSheet from './pages/CharacterSheet';
+import FinalizedCharacterSheet from './components/CharacterSheet/CharacterSheet';
 import ReferenceGuide from './pages/ReferenceGuide';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
             <Route path="/characters" element={<CharacterList />} />
             <Route path="/characters/new" element={<CharacterCreation />} />
             <Route path="/characters/:id" element={<CharacterSheet />} />
+            <Route path="/character-sheet" element={<FinalizedCharacterSheet />} />
             <Route path="/reference" element={<ReferenceGuide />} />
           </Routes>
         </main>

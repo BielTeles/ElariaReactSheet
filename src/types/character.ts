@@ -173,4 +173,12 @@ export interface CharacterCreation {
     personality?: string;
     background?: string;
   };
+  
+  // Estatísticas Finais (calculadas na finalização)
+  hitPoints?: number;
+  manaPoints?: number;
+  vigorPoints?: number;
+  keyAttribute?: string;
+  level?: number;
+  createdAt?: string;
 } 
