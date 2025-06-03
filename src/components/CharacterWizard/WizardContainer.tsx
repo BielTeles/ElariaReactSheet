@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { CharacterCreation } from '../../types/character';
+import { classes } from '../../data/classes';
 import AttributesStep from './steps/AttributesStep';
 import RaceStep from './steps/RaceStep';
 import ClassStep from './steps/ClassStep';
@@ -10,6 +11,7 @@ import SubclassAbilitiesStep from './steps/SubclassAbilitiesStep';
 import OriginStep from './steps/OriginStep';
 import DeityStep from './steps/DeityStep';
 import SkillsStep from './steps/SkillsStep';
+import EquipmentStep from './steps/EquipmentStep';
 import PersonalDetailsStep from './steps/PersonalDetailsStep';
 import SummaryStep from './steps/SummaryStep';
 
@@ -30,8 +32,9 @@ const WizardContainer: React.FC = () => {
     { id: 6, name: 'Origem', component: OriginStep },
     { id: 7, name: 'Divindade', component: DeityStep },
     { id: 8, name: 'Perícias', component: SkillsStep },
-    { id: 9, name: 'Detalhes', component: PersonalDetailsStep },
-    { id: 10, name: 'Resumo', component: SummaryStep }
+    { id: 9, name: 'Equipamento', component: EquipmentStep },
+    { id: 10, name: 'Detalhes', component: PersonalDetailsStep },
+    { id: 11, name: 'Resumo', component: SummaryStep }
   ];
 
   const getCurrentStepComponent = () => {
@@ -67,7 +70,8 @@ const WizardContainer: React.FC = () => {
     // Validação básica por etapa
     switch (currentStep) {
       case 1: // Atributos
-        return Object.values(characterData.attributes).length === 6;
+        return Object.values(characterData.attributes).length === 6 && 
+               Object.values(characterData.attributes).every(val => val >= 8 && val <= 15);
       case 2: // Raça
         return !!characterData.race;
       case 3: // Classe
@@ -79,11 +83,21 @@ const WizardContainer: React.FC = () => {
       case 6: // Origem
         return !!characterData.origin;
       case 7: // Divindade (opcional)
-        return true;
+        return true; // Sempre pode prosseguir (é opcional)
       case 8: // Perícias
-        return (characterData.selectedClassSkills?.length || 0) > 0;
-      case 9: // Detalhes
+        const classData = characterData.mainClass ? classes[characterData.mainClass] : null;
+        const skillChoices = classData?.skillChoices || 0;
+        const selectedClassSkills = characterData.selectedClassSkills?.length || 0;
+        const isKain = characterData.race === 'kain';
+        const selectedRaceSkills = characterData.selectedRaceSkills?.length || 0;
+        return selectedClassSkills === skillChoices && (!isKain || selectedRaceSkills === 2);
+      case 9: // Equipamento
+        return !!characterData.initialGold; // Deve ter rolado os Elfens
+      case 10: // Detalhes Pessoais
         return !!characterData.personalDetails?.name;
+      case 11: // Resumo
+        const isKainWithoutBonus = characterData.race === 'kain' && !characterData.selectedAttributeBonus;
+        return !isKainWithoutBonus; // Kain deve ter escolhido o bônus de atributo
       default:
         return true;
     }

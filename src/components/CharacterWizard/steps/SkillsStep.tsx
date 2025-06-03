@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { CharacterCreation } from '../../../types/character';
 import { classes } from '../../../data/classes';
 import { races } from '../../../data/races';
+import { origins } from '../../../data/origins';
+import { deities } from '../../../data/deities';
 import { User, Brain, Zap, Shield, Clock, Eye, Minus, Plus } from 'lucide-react';
 
 interface SkillsStepProps {
@@ -13,8 +15,8 @@ interface SkillsStepProps {
 
 // Lista completa de perícias conforme o livro
 const allSkills: Record<string, { name: string; attribute: string; description: string; category: string }> = {
-  'Acrobacia': { 
-    name: 'Acrobacia', 
+  'Acrobatismo': { 
+    name: 'Acrobatismo', 
     attribute: 'destreza', 
     description: 'Equilibrar-se em superfícies estreitas, realizar saltos e piruetas, cair com segurança, escapar de agarrões.',
     category: 'física'
@@ -218,9 +220,11 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
   const [spentPoints, setSpentPoints] = useState<number>(0);
   const maxPoints = 10;
 
-  // Obter dados da classe e raça
+  // Obter dados da classe, raça e origem
   const classData = data.mainClass ? classes[data.mainClass] : null;
   const raceData = data.race ? races[data.race] : null;
+  const originData = data.origin ? origins[data.origin] : null;
+  const deityData = data.deity ? deities[data.deity] : null;
   const availableClassSkills = classData?.availableSkills || [];
   const skillChoices = classData?.skillChoices || 0;
 
@@ -240,12 +244,26 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
     return skills;
   };
 
+  // Obter perícias da origem
+  const getOriginSkills = (): string[] => {
+    if (!originData) return [];
+    return [...originData.trainedSkills];
+  };
+
+  // Obter perícia da divindade
+  const getDeitySkill = (): string[] => {
+    if (!deityData) return [];
+    return [deityData.trainedSkill];
+  };
+
   const raceSkills = getRaceSkills();
+  const originSkills = getOriginSkills();
+  const deitySkills = getDeitySkill();
   const isKain = data.race === 'kain';
 
   // Calcular perícias treinadas (que começam com valor 1)
   const getTrainedSkills = (): string[] => {
-    const trained = [...selectedClassSkills, ...raceSkills];
+    const trained = [...selectedClassSkills, ...raceSkills, ...originSkills, ...deitySkills];
     if (isKain) {
       trained.push(...selectedRaceSkills);
     }
@@ -461,11 +479,103 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
         </div>
       </div>
 
-      {/* Perícias da Raça */}
+      {/* Seção 2: Perícias da Origem */}
+      {originSkills.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h4 className="text-2xl font-bold text-slate-800 mb-4">
+            2. Perícias da Origem
+          </h4>
+          
+          <p className="text-slate-600 mb-6">
+            Como <span className="font-semibold text-purple-600">{originData?.name}</span>, você recebe automaticamente as seguintes perícias <span className="font-semibold text-green-600">(Valor 1 cada)</span>:
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            {originSkills.map((skillName) => {
+              const skill = allSkills[skillName];
+              if (!skill) return null;
+              
+              return (
+                <div
+                  key={skillName}
+                  className="bg-purple-50 rounded-lg border-2 border-purple-400 p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 p-2 rounded-lg bg-purple-200 text-purple-700">
+                      {getCategoryIcon(skill.category)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h5 className="font-bold text-slate-800">{skill.name}</h5>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(skill.category)}`}>
+                          {skill.attribute}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600">{skill.description}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Seção 3: Perícia do Patrono */}
+      {deitySkills.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h4 className="text-2xl font-bold text-slate-800 mb-4">
+            {originSkills.length > 0 ? '3' : '2'}. Perícia do Patrono
+          </h4>
+          
+          <p className="text-slate-600 mb-6">
+            Como seguidor de <span className="font-semibold text-amber-600">{deityData?.name}</span>, você recebe automaticamente a seguinte perícia <span className="font-semibold text-green-600">(Valor 1)</span>:
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-4">
+            {deitySkills.map((skillName) => {
+              const skill = allSkills[skillName];
+              if (!skill) return null;
+              
+              return (
+                <div
+                  key={skillName}
+                  className="bg-amber-50 rounded-lg border-2 border-amber-400 p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 p-2 rounded-lg bg-amber-200 text-amber-700">
+                      {getCategoryIcon(skill.category)}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h5 className="font-bold text-slate-800">{skill.name}</h5>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(skill.category)}`}>
+                          {skill.attribute}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600">{skill.description}</p>
+                      <div className="mt-2 text-xs text-amber-700 bg-amber-100 p-2 rounded">
+                        <strong>Benefício do Patrono:</strong> {deityData?.benefit.description}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Seção 4/3/2: Perícias da Raça */}
       {(raceSkills.length > 0 || isKain) && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h4 className="text-2xl font-bold text-slate-800 mb-4">
-            2. Perícias da Raça
+            {(() => {
+              let sectionNumber = 2;
+              if (originSkills.length > 0) sectionNumber++;
+              if (deitySkills.length > 0) sectionNumber++;
+              return `${sectionNumber}. Perícias da Raça`;
+            })()}
           </h4>
           
           {raceSkills.length > 0 ? (
@@ -558,24 +668,41 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
         </div>
       )}
 
-      {/* Distribuição de Pontos */}
+      {/* Seção Final: Distribuir Pontos de Perícia */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex justify-between items-center mb-6">
           <h4 className="text-2xl font-bold text-slate-800">
-            3. Distribuir Pontos de Perícia
+            {(() => {
+              let sectionNumber = 2;
+              if (originSkills.length > 0) sectionNumber++;
+              if (deitySkills.length > 0) sectionNumber++;
+              if (raceSkills.length > 0 || isKain) sectionNumber++;
+              return `${sectionNumber}. Distribuir Pontos de Perícia`;
+            })()}
           </h4>
           <div className="text-right">
-            <div className="text-2xl font-bold text-blue-600">
-              {maxPoints - spentPoints}/{maxPoints}
-            </div>
-            <div className="text-sm text-gray-600">pontos restantes</div>
+            <p className="text-lg font-bold text-blue-600">
+              {spentPoints} / {maxPoints} pontos gastos
+            </p>
+            <p className="text-sm text-slate-600">
+              Você pode gastar até {maxPoints} pontos em qualquer perícia
+            </p>
           </div>
         </div>
-        
-        <p className="text-slate-600 mb-6">
-          Você pode gastar seus <span className="font-semibold text-blue-600">10 pontos em QUALQUER perícia</span>. 
-          Perícias treinadas já começam com Valor 1. Custos: Valor 1-4 (1 ponto cada), Valor 5-9 (3 pontos cada), etc.
-        </p>
+
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <span className="text-yellow-600 text-xl">💡</span>
+            <div>
+              <h5 className="font-semibold text-yellow-800 mb-2">Regra dos 10 Pontos:</h5>
+              <div className="text-yellow-700 text-sm space-y-1">
+                <p>• <strong>Perícias Treinadas:</strong> Começam com Valor 1 (gratuito) - mostradas acima</p>
+                <p>• <strong>10 Pontos Livres:</strong> Podem ser gastos em QUALQUER perícia (treinada ou não)</p>
+                <p>• <strong>Custos:</strong> Valores 1-4: 1 ponto cada | Valores 5-9: 3 pontos cada | Valor 10+: 6 pontos cada</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(allSkills).map(([skillName, skill]) => {

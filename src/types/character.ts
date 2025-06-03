@@ -135,6 +135,8 @@ export interface SubclassData {
 export interface CharacterCreation {
   // Atributos
   attributes: Record<string, number>;
+  finalAttributes?: Record<string, number>;
+  selectedAttributeBonus?: string; // Para Kain escolher qual atributo recebe bônus
   
   // Raça
   race?: string;
@@ -158,6 +160,11 @@ export interface CharacterCreation {
   
   // Habilidades da Subclasse
   selectedSubclassAbilities?: string[];
+  
+  // Equipamentos e Moeda
+  initialGold?: number; // Resultado do 4d6
+  selectedEquipment?: string[]; // IDs dos equipamentos comprados
+  remainingGold?: number; // Ouro restante após compras
   
   // Detalhes Pessoais
   personalDetails?: {
