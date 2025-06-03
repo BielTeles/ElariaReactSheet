@@ -153,6 +153,8 @@ export interface CharacterCreation {
   selectedSkills?: string[];
   selectedClassSkills?: string[];
   selectedRaceSkills?: string[];
+  skillValues?: Record<string, number>;
+  finalSkillValues?: Record<string, number>;
   
   // Habilidades da Subclasse
   selectedSubclassAbilities?: string[];

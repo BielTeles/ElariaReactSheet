@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CharacterCreation } from '../../../types/character';
 import { classes } from '../../../data/classes';
 import { races } from '../../../data/races';
-import { User, Shield, Eye, Brain, Zap, Clock } from 'lucide-react';
+import { User, Brain, Zap, Shield, Clock, Eye, Minus, Plus } from 'lucide-react';
 
 interface SkillsStepProps {
   data: CharacterCreation;
@@ -65,12 +65,12 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
     name: 'Cura', 
     attribute: 'sabedoria', 
     description: 'Realizar primeiros socorros, tratar ferimentos, diagnosticar doenças ou venenos, estabilizar moribundos.',
-    category: 'mental'
+    category: 'útil'
   },
   'Diplomacia': { 
     name: 'Diplomacia', 
     attribute: 'carisma', 
-    description: 'Interagir socialmente de forma positiva, negociar, persuadir, fazer amigos e influenciar pessoas.',
+    description: 'Interagir socialmente de forma positiva, negociar, persuadir, fazer amigos e influenciar pessoas com boa vontade.',
     category: 'social'
   },
   'Elemental': { 
@@ -82,7 +82,7 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
   'Enganação': { 
     name: 'Enganação', 
     attribute: 'carisma', 
-    description: 'Mentir convincentemente, blefar, disfarçar intenções ou aparência.',
+    description: 'Mentir convincentemente, blefar, disfarçar intenções ou aparência (complementa Atuação para disfarces).',
     category: 'social'
   },
   'Esquiva': { 
@@ -106,7 +106,7 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
   'Guerra': { 
     name: 'Guerra', 
     attribute: 'inteligência', 
-    description: 'Conhecimento sobre táticas militares, estratégia, história de batalhas, armas e armaduras.',
+    description: 'Conhecimento sobre táticas militares, estratégia, história de batalhas, armas e armaduras, fortificações.',
     category: 'mental'
   },
   'Iniciativa': { 
@@ -118,31 +118,31 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
   'Intimidação': { 
     name: 'Intimidação', 
     attribute: 'carisma', 
-    description: 'Coagir, ameaçar ou assustar outros para obter informações ou obediência através do medo.',
+    description: 'Coagir, ameaçar ou assustar outros para obter informações ou obediência através do medo ou da força de presença.',
     category: 'social'
   },
   'Intuição': { 
     name: 'Intuição', 
     attribute: 'sabedoria', 
-    description: 'Perceber as intenções, emoções e motivações ocultas de outras criaturas, sentir quando algo está errado.',
+    description: 'Perceber as intenções, emoções e motivações ocultas de outras criaturas, sentir quando algo está errado, detectar mentiras.',
     category: 'mental'
   },
   'Investigação': { 
     name: 'Investigação', 
     attribute: 'inteligência', 
-    description: 'Procurar pistas, analisar cenas de crime ou locais de interesse, deduzir informações a partir de evidências.',
+    description: 'Procurar pistas, analisar cenas de crime ou locais de interesse, deduzir informações a partir de evidências, decifrar códigos.',
     category: 'mental'
   },
   'Jogatina': { 
     name: 'Jogatina', 
     attribute: 'carisma', 
-    description: 'Jogar e entender jogos de azar, cartas ou dados. Inclui a habilidade de trapacear sutilmente.',
+    description: 'Jogar e entender jogos de azar, cartas ou dados. Inclui a habilidade de trapacear sutilmente ou perceber trapaças.',
     category: 'social'
   },
   'Ladinagem': { 
     name: 'Ladinagem', 
     attribute: 'destreza', 
-    description: 'Abrir fechaduras, desarmar armadilhas, realizar pequenos furtos e outras tarefas que exigem mãos ágeis.',
+    description: 'Abrir fechaduras, desarmar armadilhas, realizar pequenos furtos (bater carteira), e outras tarefas que exigem mãos ágeis e discretas.',
     category: 'física'
   },
   'Misticismo': { 
@@ -160,7 +160,7 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
   'Percepção': { 
     name: 'Percepção', 
     attribute: 'sabedoria', 
-    description: 'Usar os sentidos para notar detalhes no ambiente, avistar inimigos escondidos, ouvir conversas distantes.',
+    description: 'Usar os sentidos (visão, audição, olfato) para notar detalhes no ambiente, avistar inimigos escondidos, ouvir conversas distantes.',
     category: 'mental'
   },
   'Pontaria': { 
@@ -195,11 +195,30 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
   }
 };
 
+// Tabela de custos por valor de perícia (conforme o livro)
+const getSkillPointCost = (currentValue: number, targetValue: number): number => {
+  let totalCost = 0;
+  for (let i = currentValue + 1; i <= targetValue; i++) {
+    if (i <= 4) totalCost += 1;
+    else if (i <= 9) totalCost += 3;
+    else if (i <= 14) totalCost += 6;
+    else if (i <= 19) totalCost += 9;
+    else totalCost += 12;
+  }
+  return totalCost;
+};
+
 const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevious }) => {
+  // Estado para seleção de perícias treinadas
   const [selectedClassSkills, setSelectedClassSkills] = useState<string[]>(data.selectedClassSkills || []);
   const [selectedRaceSkills, setSelectedRaceSkills] = useState<string[]>(data.selectedRaceSkills || []);
+  
+  // Estado para valores das perícias e pontos gastos
+  const [skillValues, setSkillValues] = useState<Record<string, number>>(data.skillValues || {});
+  const [spentPoints, setSpentPoints] = useState<number>(0);
+  const maxPoints = 10;
 
-  // Obter perícias disponíveis da classe
+  // Obter dados da classe e raça
   const classData = data.mainClass ? classes[data.mainClass] : null;
   const raceData = data.race ? races[data.race] : null;
   const availableClassSkills = classData?.availableSkills || [];
@@ -224,14 +243,50 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
   const raceSkills = getRaceSkills();
   const isKain = data.race === 'kain';
 
-  // Atualizar dados do personagem quando perícias mudam
+  // Calcular perícias treinadas (que começam com valor 1)
+  const getTrainedSkills = (): string[] => {
+    const trained = [...selectedClassSkills, ...raceSkills];
+    if (isKain) {
+      trained.push(...selectedRaceSkills);
+    }
+    return trained;
+  };
+
+  const trainedSkills = getTrainedSkills();
+
+  // Calcular valor final de cada perícia
+  const getFinalSkillValue = (skillName: string): number => {
+    const isTrained = trainedSkills.includes(skillName);
+    const baseValue = isTrained ? 1 : 0; // Perícias treinadas começam com 1
+    const boughtValue = skillValues[skillName] || 0;
+    return baseValue + boughtValue;
+  };
+
+  // Calcular pontos gastos
+  useEffect(() => {
+    let total = 0;
+    Object.entries(skillValues).forEach(([skillName, boughtValue]) => {
+      if (boughtValue > 0) {
+        const isTrained = trainedSkills.includes(skillName);
+        const startValue = isTrained ? 1 : 0;
+        total += getSkillPointCost(startValue, startValue + boughtValue);
+      }
+    });
+    setSpentPoints(total);
+  }, [skillValues, trainedSkills]);
+
+  // Atualizar dados do personagem
   useEffect(() => {
     onUpdate({
       ...data,
       selectedClassSkills: selectedClassSkills,
-      selectedRaceSkills: selectedRaceSkills
+      selectedRaceSkills: selectedRaceSkills,
+      skillValues: skillValues,
+      finalSkillValues: Object.fromEntries(
+        Object.keys(allSkills).map(skill => [skill, getFinalSkillValue(skill)])
+      )
     });
-  }, [selectedClassSkills, selectedRaceSkills, data, onUpdate]);
+  }, [selectedClassSkills, selectedRaceSkills, skillValues]);
 
   const toggleClassSkill = (skill: string) => {
     if (selectedClassSkills.includes(skill)) {
@@ -249,6 +304,47 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
     }
   };
 
+  const canIncreaseSkill = (skillName: string): boolean => {
+    const currentFinalValue = getFinalSkillValue(skillName);
+    const currentBoughtValue = skillValues[skillName] || 0;
+    const isTrained = trainedSkills.includes(skillName);
+    const startValue = isTrained ? 1 : 0;
+    
+    if (currentFinalValue >= 20) return false; // Máximo de 20
+    
+    const costToIncrease = getSkillPointCost(startValue + currentBoughtValue, startValue + currentBoughtValue + 1);
+    return spentPoints + costToIncrease <= maxPoints;
+  };
+
+  const canDecreaseSkill = (skillName: string): boolean => {
+    return (skillValues[skillName] || 0) > 0;
+  };
+
+  const increaseSkill = (skillName: string) => {
+    if (!canIncreaseSkill(skillName)) return;
+    
+    const newBoughtValue = (skillValues[skillName] || 0) + 1;
+    setSkillValues({
+      ...skillValues,
+      [skillName]: newBoughtValue
+    });
+  };
+
+  const decreaseSkill = (skillName: string) => {
+    if (!canDecreaseSkill(skillName)) return;
+    
+    const currentBoughtValue = skillValues[skillName] || 0;
+    if (currentBoughtValue <= 1) {
+      const { [skillName]: removed, ...rest } = skillValues;
+      setSkillValues(rest);
+    } else {
+      setSkillValues({
+        ...skillValues,
+        [skillName]: currentBoughtValue - 1
+      });
+    }
+  };
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'física': return <User className="w-5 h-5" />;
@@ -258,6 +354,7 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
       case 'combate': return <Shield className="w-5 h-5" />;
       case 'reação': return <Clock className="w-5 h-5" />;
       case 'resistência': return <Shield className="w-5 h-5" />;
+      case 'útil': return <Eye className="w-5 h-5" />;
       default: return <Eye className="w-5 h-5" />;
     }
   };
@@ -271,13 +368,13 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
       case 'combate': return 'text-red-600 bg-red-100';
       case 'reação': return 'text-orange-600 bg-orange-100';
       case 'resistência': return 'text-gray-600 bg-gray-100';
+      case 'útil': return 'text-emerald-600 bg-emerald-100';
       default: return 'text-slate-600 bg-slate-100';
     }
   };
 
   const canProceed = selectedClassSkills.length === skillChoices && 
-                    (!isKain || selectedRaceSkills.length === 2) && 
-                    raceSkills.length === 0; // Se a raça tem perícias fixas, não precisa escolher
+                    (!isKain || selectedRaceSkills.length === 2);
 
   if (!classData) {
     return (
@@ -295,22 +392,22 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-8">
       {/* Cabeçalho */}
       <div className="text-center">
-        <h3 className="text-3xl font-bold text-slate-800 mb-3">Escolha suas Perícias</h3>
+        <h3 className="text-3xl font-bold text-slate-800 mb-3">Sistema de Perícias</h3>
         <p className="text-slate-600">
-          Selecione as perícias que definem as habilidades especializadas do seu personagem
+          Primeiro selecione suas perícias treinadas, depois distribua seus 10 pontos em qualquer perícia
         </p>
       </div>
 
-      {/* Perícias da Classe */}
+      {/* Seleção de Perícias Treinadas */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h4 className="text-2xl font-bold text-slate-800 mb-4">
-          Perícias da Classe ({selectedClassSkills.length}/{skillChoices})
+          1. Perícias Treinadas da Classe ({selectedClassSkills.length}/{skillChoices})
         </h4>
         <p className="text-slate-600 mb-6">
-          Como {classData.name}, você pode escolher {skillChoices} perícias da lista abaixo:
+          Como {classData.name}, escolha {skillChoices} perícias. <span className="font-semibold text-green-600">Perícias treinadas começam com Valor 1 (gratuito)</span>:
         </p>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -368,13 +465,13 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
       {(raceSkills.length > 0 || isKain) && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h4 className="text-2xl font-bold text-slate-800 mb-4">
-            Perícias da Raça
+            2. Perícias da Raça
           </h4>
           
           {raceSkills.length > 0 ? (
             <>
               <p className="text-slate-600 mb-6">
-                Como {raceData?.name}, você recebe automaticamente as seguintes perícias:
+                Como {raceData?.name}, você recebe automaticamente as seguintes perícias <span className="font-semibold text-green-600">(Valor 1 cada)</span>:
               </p>
               <div className="grid md:grid-cols-2 gap-4">
                 {raceSkills.map((skillName) => {
@@ -399,9 +496,6 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
                           </div>
                           <p className="text-sm text-slate-600">{skill.description}</p>
                         </div>
-                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">★</span>
-                        </div>
                       </div>
                     </div>
                   );
@@ -411,7 +505,7 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
           ) : isKain ? (
             <>
               <p className="text-slate-600 mb-6">
-                Como Kain, você pode escolher 2 perícias de qualquer categoria ({selectedRaceSkills.length}/2):
+                Como Kain, você pode escolher 2 perícias de qualquer lista ({selectedRaceSkills.length}/2):
               </p>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(allSkills).map(([skillName, skill]) => {
@@ -464,49 +558,138 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
         </div>
       )}
 
-      {/* Informações sobre Perícias */}
-      <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-        <h5 className="font-semibold text-yellow-800 mb-2">💡 Sistema de Perícias</h5>
-        <div className="text-yellow-700 text-sm space-y-2">
-          <p>
-            • Perícias representam habilidades aprendidas e treinamento específico
-          </p>
-          <p>
-            • Ser treinado em uma perícia significa que ela começa com Valor 1
-          </p>
-          <p>
-            • Você recebe 10 pontos de perícia no 1º nível para aumentar o Valor das perícias treinadas
-          </p>
-          <p>
-            • <strong>Perícias de Reação:</strong> Bloqueio e Esquiva são usadas para evitar ataques em combate
-          </p>
+      {/* Distribuição de Pontos */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h4 className="text-2xl font-bold text-slate-800">
+            3. Distribuir Pontos de Perícia
+          </h4>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-600">
+              {maxPoints - spentPoints}/{maxPoints}
+            </div>
+            <div className="text-sm text-gray-600">pontos restantes</div>
+          </div>
+        </div>
+        
+        <p className="text-slate-600 mb-6">
+          Você pode gastar seus <span className="font-semibold text-blue-600">10 pontos em QUALQUER perícia</span>. 
+          Perícias treinadas já começam com Valor 1. Custos: Valor 1-4 (1 ponto cada), Valor 5-9 (3 pontos cada), etc.
+        </p>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(allSkills).map(([skillName, skill]) => {
+            const isTrained = trainedSkills.includes(skillName);
+            const boughtValue = skillValues[skillName] || 0;
+            const finalValue = getFinalSkillValue(skillName);
+            const canIncrease = canIncreaseSkill(skillName);
+            const canDecrease = canDecreaseSkill(skillName);
+            
+            return (
+              <div
+                key={skillName}
+                className={`bg-white rounded-lg border-2 p-4 ${
+                  isTrained ? 'border-green-300 bg-green-50' : 'border-gray-200'
+                }`}
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className={`flex-shrink-0 p-2 rounded-lg ${
+                    isTrained 
+                      ? 'bg-green-200 text-green-700' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {getCategoryIcon(skill.category)}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h5 className="font-bold text-slate-800">{skill.name}</h5>
+                      {isTrained && (
+                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                          Treinada
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(skill.category)}`}>
+                        {skill.attribute}
+                      </span>
+                      <span className="text-lg font-bold text-blue-600">
+                        Valor: {finalValue}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    {isTrained ? `Base: 1 + Comprados: ${boughtValue}` : `Comprados: ${boughtValue}`}
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => decreaseSkill(skillName)}
+                      disabled={!canDecrease}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                        canDecrease
+                          ? 'bg-red-100 hover:bg-red-200 text-red-600 cursor-pointer'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    
+                    <button
+                      onClick={() => increaseSkill(skillName)}
+                      disabled={!canIncrease}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                        canIncrease
+                          ? 'bg-blue-100 hover:bg-blue-200 text-blue-600 cursor-pointer'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                <p className="text-xs text-slate-500 mt-2">{skill.description}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {/* Navegação */}
-      <div className="flex justify-between items-center pt-8 border-t border-gray-200">
+      <div className="flex justify-between items-center pt-6">
         <button 
-          onClick={onPrevious} 
-          className="flex items-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200"
+          onClick={onPrevious}
+          className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
         >
-          ← Anterior
+          Anterior
         </button>
         
         <div className="text-center">
+          <div className="text-sm text-gray-600 mb-2">
+            Pontos gastos: {spentPoints}/{maxPoints}
+          </div>
           {!canProceed && (
-            <p className="text-sm text-orange-600">
-              {selectedClassSkills.length < skillChoices && `Selecione ${skillChoices - selectedClassSkills.length} perícia(s) da classe`}
-              {isKain && selectedRaceSkills.length < 2 && ` | Selecione ${2 - selectedRaceSkills.length} perícia(s) de raça`}
-            </p>
+            <div className="text-sm text-red-600">
+              Complete a seleção de perícias treinadas para continuar
+            </div>
           )}
         </div>
-
+        
         <button 
-          onClick={onNext} 
+          onClick={onNext}
           disabled={!canProceed}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200"
+          className={`px-6 py-3 rounded-lg transition-colors ${
+            canProceed
+              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
         >
-          Próximo →
+          Próximo
         </button>
       </div>
     </div>
