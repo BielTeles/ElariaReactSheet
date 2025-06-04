@@ -126,19 +126,29 @@ export class CharacterStorage {
       throw new Error('Nome do personagem é obrigatório');
     }
 
-    // Validar atributos
-    if (!data.attributes || Object.keys(data.attributes).length === 0) {
-      throw new Error('Atributos do personagem são obrigatórios');
-    }
-
-    // Validar valores de atributos
-    for (const [attr, value] of Object.entries(data.attributes)) {
-      if (typeof value !== 'number' || value < -1 || value > 20) {
-        throw new Error(`Valor inválido para atributo ${attr}: ${value}`);
+    // Validar atributos (se existirem)
+    if (data.attributes && Object.keys(data.attributes).length > 0) {
+      // Validar valores de atributos conforme as regras do livro
+      for (const [attr, value] of Object.entries(data.attributes)) {
+        if (typeof value !== 'number') {
+          throw new Error(`Valor inválido para atributo ${attr}: deve ser um número`);
+        }
+        
+        // Conforme o livro.md: -5 ou menos causa efeitos drásticos
+        // Para criação de personagens, permitimos -1 até valores razoáveis
+        if (value < -1) {
+          throw new Error(`Valor muito baixo para atributo ${attr}: ${value} (mínimo -1 para personagens jogadores)`);
+        }
+        
+        // Para criação inicial, valores acima de 5 são improváveis com o sistema de pontos
+        // Mas permitimos valores maiores para personagens já criados/editados
+        if (value > 15) {
+          console.warn(`Valor muito alto para atributo ${attr}: ${value} - verifique se está correto`);
+        }
       }
     }
 
-    // Validar estado
+    // Validar estado (apenas valores negativos são problemáticos)
     if (state.currentHP < 0 || state.currentMP < 0 || state.currentVigor < 0) {
       throw new Error('Valores de recursos não podem ser negativos');
     }
@@ -297,7 +307,59 @@ export class CharacterStorage {
   // Carregar personagem por ID
   static loadCharacter(id: string): SavedCharacter | null {
     const characters = this.getAllCharacters();
-    return characters.find(char => char.id === id) || null;
+    const character = characters.find(char => char.id === id) || null;
+    
+    // Migrar personagem antigo se necessário
+    if (character) {
+      return this.migrateCharacterData(character);
+    }
+    
+    return character;
+  }
+
+  // Migrar dados de personagem para versões mais novas
+  private static migrateCharacterData(character: SavedCharacter): SavedCharacter {
+    let needsUpdate = false;
+    const migratedState = { ...character.state };
+    
+    // Adicionar campo notes se não existir (migração v1.1.0)
+    if (!migratedState.notes) {
+      migratedState.notes = [];
+      needsUpdate = true;
+    }
+    
+    // Garantir que rollHistory existe
+    if (!migratedState.rollHistory) {
+      migratedState.rollHistory = [];
+      needsUpdate = true;
+    }
+    
+    // Garantir que conditions existe
+    if (!migratedState.conditions) {
+      migratedState.conditions = [];
+      needsUpdate = true;
+    }
+    
+    if (needsUpdate) {
+      const updatedCharacter = {
+        ...character,
+        state: migratedState,
+        version: CURRENT_VERSION,
+        lastModified: new Date()
+      };
+      
+      // Salvar a versão migrada
+      const characters = this.getAllCharacters();
+      const index = characters.findIndex(char => char.id === character.id);
+      if (index >= 0) {
+        characters[index] = updatedCharacter;
+        this.saveToStorage(characters);
+      }
+      
+      return updatedCharacter;
+    }
+    
+    return character;
   }
 
   // Obter todos os personagens
@@ -308,12 +370,17 @@ export class CharacterStorage {
       
       const characters = JSON.parse(stored) as SavedCharacter[];
       
-      // Converter datas de volta para objetos Date
-      return characters.map(char => ({
-        ...char,
-        createdAt: new Date(char.createdAt),
-        lastModified: new Date(char.lastModified)
-      }));
+      // Converter datas de volta para objetos Date e aplicar migrações
+      return characters.map(char => {
+        const characterWithDates = {
+          ...char,
+          createdAt: new Date(char.createdAt),
+          lastModified: new Date(char.lastModified)
+        };
+        
+        // Aplicar migração se necessário
+        return this.migrateCharacterData(characterWithDates);
+      });
     } catch (error) {
       console.error('Erro ao carregar personagens:', error);
       return [];

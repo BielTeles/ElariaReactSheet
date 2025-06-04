@@ -167,7 +167,8 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
         currentVigor: stats.vigorPoints,
         tempHP: 0,
         conditions: [],
-        rollHistory: []
+        rollHistory: [],
+        notes: []
       };
 
       // Salvar personagem

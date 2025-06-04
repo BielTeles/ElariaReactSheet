@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { CharacterCreation } from '../../types/character';
@@ -66,12 +66,38 @@ const WizardContainer: React.FC = () => {
     }
   };
 
+  const finalizeCharacter = () => {
+    // O SummaryStep irá lidar com a finalização
+    // Este método pode ser usado para validações finais se necessário
+    console.log('Finalizando personagem:', characterData);
+  };
+
+  const goToStep = (stepId: number) => {
+    if (stepId < currentStep) {
+      setCurrentStep(stepId);
+      setCharacterData(prev => ({ ...prev, step: stepId }));
+    }
+  };
+
+  const handleCancel = () => {
+    // Rolar para o topo antes de navegar
+    scrollToTop();
+    // Pequeno delay para permitir o scroll antes da navegação
+    setTimeout(() => {
+      navigate('/characters');
+    }, 200);
+  };
+
   const canProceed = () => {
     // Validação básica por etapa
     switch (currentStep) {
       case 1: // Atributos
-        return Object.values(characterData.attributes).length === 6 && 
-               Object.values(characterData.attributes).every(val => val >= 8 && val <= 15);
+        // Verificar se todos os 6 atributos foram definidos e se os pontos foram distribuídos
+        const hasAllAttributes = Object.keys(characterData.attributes || {}).length === 6;
+        const allAttributesValid = Object.values(characterData.attributes || {}).every(val => 
+          typeof val === 'number' && val >= -1 && val <= 10 // Máximo realista com 6-7 pontos
+        );
+        return hasAllAttributes && allAttributesValid;
       case 2: // Raça
         return !!characterData.race;
       case 3: // Classe
@@ -103,12 +129,85 @@ const WizardContainer: React.FC = () => {
     }
   };
 
+  // Função utilitária para scroll mais robusta
+  const scrollToTop = () => {
+    const currentScrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    console.log(`📏 Posição atual do scroll: ${currentScrollY}px`);
+    
+    // Tentar múltiplas abordagens para garantir que o scroll funcione
+    try {
+      // Método 1: window.scrollTo com behavior smooth
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      console.log('✅ window.scrollTo executado');
+    } catch (e) {
+      // Fallback: scroll instantâneo se smooth não funcionar
+      window.scrollTo(0, 0);
+      console.log('⚡ Fallback scroll instantâneo executado');
+    }
+    
+    // Método 2: tentar rolar o body
+    try {
+      document.body.scrollTop = 0;
+      console.log('✅ body.scrollTop = 0 executado');
+    } catch (e) {
+      // Ignorar se não funcionar
+      console.log('❌ body.scrollTop falhou');
+    }
+    
+    // Método 3: tentar rolar o document element
+    try {
+      document.documentElement.scrollTop = 0;
+      console.log('✅ documentElement.scrollTop = 0 executado');
+    } catch (e) {
+      // Ignorar se não funcionar
+      console.log('❌ documentElement.scrollTop falhou');
+    }
+    
+    // Método 4: tentar encontrar o container principal
+    try {
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.scrollTop = 0;
+        console.log('✅ main.scrollTop = 0 executado');
+      } else {
+        console.log('❌ Elemento main não encontrado');
+      }
+    } catch (e) {
+      // Ignorar se não funcionar
+      console.log('❌ main.scrollTop falhou');
+    }
+    
+    // Verificar após tentativas
+    setTimeout(() => {
+      const newScrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      console.log(`📏 Nova posição do scroll: ${newScrollY}px`);
+    }, 50);
+  };
+
+  useEffect(() => {
+    // Rolar para o topo da página quando o componente é renderizado
+    scrollToTop();
+  }, []);
+
+  // UseEffect para rolar para o topo sempre que mudar de step
+  useEffect(() => {
+    console.log(`🔄 Mudança de step detectada: ${currentStep}`);
+    
+    // Usar setTimeout para garantir que o DOM foi atualizado
+    const timer = setTimeout(() => {
+      console.log(`📜 Executando scroll para o topo (step ${currentStep})`);
+      scrollToTop();
+    }, 150); // Aumentei o delay para 150ms
+
+    return () => clearTimeout(timer);
+  }, [currentStep]);
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Progress Bar */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-fantasy font-bold text-slate-800">
+          <h2 className="text-2xl font-bold text-slate-800">
             Criar Personagem - {steps.find(s => s.id === currentStep)?.name}
           </h2>
           <span className="text-sm text-slate-500">
@@ -124,7 +223,7 @@ const WizardContainer: React.FC = () => {
               className={`flex flex-col items-center cursor-pointer transition-all duration-200 ${
                 step.id <= currentStep ? 'opacity-100' : 'opacity-50'
               }`}
-              onClick={() => step.id < currentStep && setCurrentStep(step.id)}
+              onClick={() => goToStep(step.id)}
             >
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
@@ -159,7 +258,7 @@ const WizardContainer: React.FC = () => {
       {/* Navigation */}
       <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-200">
         <button
-          onClick={() => currentStep === 1 ? navigate('/characters') : previousStep()}
+          onClick={() => currentStep === 1 ? handleCancel() : previousStep()}
           className="btn-secondary flex items-center space-x-2"
         >
           <ArrowLeft size={20} />
@@ -171,7 +270,7 @@ const WizardContainer: React.FC = () => {
         </div>
 
         <button
-          onClick={currentStep === steps.length ? () => console.log('Finalizar') : nextStep}
+          onClick={currentStep === steps.length ? finalizeCharacter : nextStep}
           disabled={!canProceed()}
           className={`flex items-center space-x-2 ${
             canProceed() ? 'btn-primary' : 'btn-secondary opacity-50 cursor-not-allowed'
