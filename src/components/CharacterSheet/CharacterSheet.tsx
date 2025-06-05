@@ -16,8 +16,10 @@ import { equipment, initialFreeEquipment } from '../../data/equipment';
 import DiceRoller from '../DiceRoller/DiceRoller';
 import NotesSystem from '../NotesSystem/NotesSystem';
 import ShopSystem from '../ShopSystem/ShopSystem';
+import { CombatManager } from '../CombatSystem';
 import { DiceRoll, CharacterState, CharacterNote, Transaction, InventoryItem, ShopItem } from '../../types/interactive';
 import { CharacterStorage, SavedCharacter } from '../../utils/characterStorage';
+import { Character } from '../../types/character';
 
 interface CharacterData {
   personalDetails?: {
@@ -55,6 +57,7 @@ const CharacterSheet: React.FC = () => {
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [showNotesSystem, setShowNotesSystem] = useState(false);
   const [showShopSystem, setShowShopSystem] = useState(false);
+  const [showCombatSystem, setShowCombatSystem] = useState(false);
   
   // ID do personagem salvo (se aplicável)
   const characterId = location.state?.characterId;
@@ -796,7 +799,7 @@ const CharacterSheet: React.FC = () => {
     } else if (skillValue === 0) {
       return successTable[0];
     } else {
-      return successTable[Math.min(skillValue, 20)] || successTable[20];
+    return successTable[Math.min(skillValue, 20)] || successTable[20];
     }
   };
 
@@ -859,9 +862,9 @@ const CharacterSheet: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
-      {/* Header Épico - CORRIGIDO */}
+      {/* Header Épico - OTIMIZADO */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-700 shadow-2xl border-b border-slate-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        <div className="w-full px-4 sm:px-6 py-4 sm:py-6">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             {/* Seção Principal do Personagem */}
             <div className="flex items-center gap-4 sm:gap-6 flex-1 min-w-0">
@@ -885,22 +888,22 @@ const CharacterSheet: React.FC = () => {
               {/* Identidade Principal */}
               <div className="flex-1 min-w-0">
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 truncate">
-                  {characterData.personalDetails?.name}
-                </h1>
+                    {characterData.personalDetails?.name}
+                  </h1>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-slate-300 mb-1 sm:mb-2">
                   <span className="flex items-center gap-1 sm:gap-2 bg-slate-700 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
                     <Crown className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="font-medium">{raceData?.name}</span>
-                  </span>
+                    </span>
                   <span className="flex items-center gap-1 sm:gap-2 bg-slate-700 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
-                    {getClassIcon(characterData.mainClass)}
+                      {getClassIcon(characterData.mainClass)}
                     <span className="font-medium">{classData?.name}</span>
-                  </span>
+                    </span>
                   <span className="flex items-center gap-1 sm:gap-2 bg-slate-700 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
                     <Star className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="font-medium">{characterData.subclass}</span>
-                  </span>
-                </div>
+                    </span>
+                  </div>
                 
                 {/* Essências e Patrono */}
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
@@ -920,59 +923,90 @@ const CharacterSheet: React.FC = () => {
             </div>
             
             {/* Controles */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full lg:w-auto">
+            <div className="flex flex-col gap-3 w-full lg:w-auto">
+              {/* Linha 1: Status e Edição */}
+              <div className="flex flex-wrap items-center gap-2 justify-end">
               {isNewCharacter && (
-                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow-lg text-xs sm:text-sm">
-                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="font-medium">Novo Herói!</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow-lg text-xs font-medium">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Novo Herói!</span>
                 </div>
               )}
               
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 shadow-lg text-xs font-medium ${
+                    isEditing 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
+                      : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:from-blue-600 hover:to-cyan-700'
+                  }`}
+                >
+                  {isEditing ? <Save className="w-3 h-3" /> : <Edit3 className="w-3 h-3" />}
+                  {isEditing ? 'Salvar' : 'Editar'}
+                </button>
+              </div>
+
+              {/* Linha 2: Ferramentas de Jogo */}
+              <div className="flex flex-wrap items-center gap-2 justify-end">
+                {/* Grupo: Sistemas de Dados */}
+                <div className="flex gap-1 bg-black/20 rounded-lg p-1">
               <button
                 onClick={() => setShowSuccessTable(!showSuccessTable)}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-lg text-xs sm:text-sm"
+                    className="flex items-center gap-1.5 px-2 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-md hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-lg text-xs font-medium"
+                    title="Planilha de Sucessos"
               >
-                <Dice6 className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Planilha de Sucessos</span>
-                <span className="sm:hidden">Planilha</span>
+                    <Dice6 className="w-3 h-3" />
+                    <span className="hidden sm:inline">Planilha</span>
               </button>
 
               <button
                 onClick={() => setShowDiceRoller(true)}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-lg text-xs sm:text-sm"
+                    className="flex items-center gap-1.5 px-2 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-md hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-lg text-xs font-medium"
+                    title="Sistema de Rolagem"
               >
-                <Dice6 className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Sistema de Rolagem</span>
-                <span className="sm:hidden">Rolagem</span>
+                    <Target className="w-3 h-3" />
+                    <span className="hidden sm:inline">Rolagem</span>
               </button>
+                </div>
               
+                {/* Grupo: Gestão de Personagem */}
+                <div className="flex gap-1 bg-black/20 rounded-lg p-1">
               <button
-                onClick={() => setShowNotesSystem(true)}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg hover:from-indigo-600 hover:to-blue-700 transition-all duration-200 shadow-lg text-xs sm:text-sm"
-              >
-                <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Notas ({(characterState.notes || []).length})</span>
+                    onClick={() => setShowNotesSystem(true)}
+                    className="flex items-center gap-1.5 px-2 py-1.5 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-md hover:from-indigo-600 hover:to-blue-700 transition-all duration-200 shadow-lg text-xs font-medium"
+                    title="Notas do Personagem"
+                  >
+                    <BookOpen className="w-3 h-3" />
+                    <span className="hidden sm:inline">Notas</span>
+                    {(characterState.notes || []).length > 0 && (
+                      <span className="bg-white/20 rounded-full px-1.5 py-0.5 text-xs">
+                        {(characterState.notes || []).length}
+                      </span>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowShopSystem(true)}
+                    className="flex items-center gap-1.5 px-2 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-md hover:from-amber-600 hover:to-orange-700 transition-all duration-200 shadow-lg text-xs font-medium"
+                    title="Sistema de Comércio"
+                  >
+                    <ShoppingCart className="w-3 h-3" />
+                    <span className="hidden sm:inline">Loja</span>
               </button>
-              
-              <button
-                onClick={() => setShowShopSystem(true)}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 shadow-lg text-xs sm:text-sm"
-              >
-                <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Loja</span>
-              </button>
-              
-              <button
-                onClick={() => setIsEditing(!isEditing)}
-                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all duration-200 shadow-lg text-xs sm:text-sm ${
-                  isEditing 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
-                    : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:from-blue-600 hover:to-cyan-700'
-                }`}
-              >
-                {isEditing ? <Save className="w-3 h-3 sm:w-4 sm:h-4" /> : <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />}
-                {isEditing ? 'Salvar' : 'Editar'}
-              </button>
+                </div>
+
+                {/* Grupo: Combate */}
+                <div className="flex gap-1 bg-black/20 rounded-lg p-1">
+                  <button
+                    onClick={() => setShowCombatSystem(true)}
+                    className="flex items-center gap-1.5 px-2 py-1.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-md hover:from-red-600 hover:to-rose-700 transition-all duration-200 shadow-lg text-xs font-medium"
+                    title="Sistema de Combate"
+                  >
+                    <Sword className="w-3 h-3" />
+                    <span className="hidden sm:inline">Combate</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1063,11 +1097,11 @@ const CharacterSheet: React.FC = () => {
       )}
 
       {/* Conteúdo Principal */}
-      <div className="max-w-7xl mx-auto p-6">
-                  <div className="grid lg:grid-cols-12 gap-4 sm:gap-6">
+      <div className="w-full py-4">
+        <div className="grid xl:grid-cols-16 lg:grid-cols-12 md:grid-cols-8 gap-4 sm:gap-5 lg:gap-6 px-4">
           
-          {/* Coluna 1: Atributos e Combate (4 colunas) */}
-          <div className="lg:col-span-4 space-y-6">
+          {/* Coluna 1: Combate e Atributos (4 colunas no XL, 3 no LG, 2 no MD) */}
+          <div className="xl:col-span-4 lg:col-span-3 md:col-span-2 space-y-4">
             
             {/* Estatísticas de Combate */}
             <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
@@ -1078,45 +1112,42 @@ const CharacterSheet: React.FC = () => {
                 </h3>
               </div>
               
-              <div className="p-6 space-y-4">
+              <div className="p-3 space-y-2">
                 {/* Pontos de Vida */}
-                <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-200">
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
-                        <Heart className="w-5 h-5 text-white" />
+                <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-200 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
+                        <Heart className="w-4 h-4 text-white" />
                       </div>
                       <div>
-                        <div className="font-semibold text-red-800">Pontos de Vida</div>
-                        <div className="text-xs text-red-600">PV Atual / Máximo</div>
+                        <div className="font-semibold text-red-800 text-sm">Pontos de Vida</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-red-600">
+                    <div className="flex items-center gap-2">
+                      <div className="text-lg font-bold text-red-600">
                         {characterState.currentHP}/{characterData.hitPoints}
                       </div>
-                                              <div className="flex items-center gap-1 mt-1">
-                          <button 
-                            onClick={() => adjustResource('hp', -1)}
-                            className="w-7 h-7 sm:w-6 sm:h-6 bg-red-500 hover:bg-red-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <button 
-                            onClick={() => adjustResource('hp', 1)}
-                            className="w-7 h-7 sm:w-6 sm:h-6 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
+                      <div className="flex gap-1">
+                        <button 
+                          onClick={() => adjustResource('hp', -1)}
+                          className="w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded text-xs flex items-center justify-center transition-colors"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <button 
+                          onClick={() => adjustResource('hp', 1)}
+                          className="w-5 h-5 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  
-                  {/* Barra de HP */}
-                  <div className="px-4 pb-3">
-                    <div className="w-full bg-red-200 rounded-full h-2">
+                  <div className="mt-2">
+                    <div className="w-full bg-red-200 rounded-full h-1.5">
                       <div 
-                        className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                        className="bg-red-500 h-1.5 rounded-full transition-all duration-300"
                         style={{ width: `${Math.max(0, (characterState.currentHP / (characterData.hitPoints || 1)) * 100)}%` }}
                       ></div>
                     </div>
@@ -1125,43 +1156,40 @@ const CharacterSheet: React.FC = () => {
 
                 {/* Pontos de Mana */}
                 {characterData.manaPoints && characterData.manaPoints > 0 && (
-                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center justify-between p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                          <Zap className="w-5 h-5 text-white" />
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
+                          <Zap className="w-4 h-4 text-white" />
                         </div>
                         <div>
-                          <div className="font-semibold text-blue-800">Pontos de Mana</div>
-                          <div className="text-xs text-blue-600">PM Atual / Máximo</div>
+                          <div className="font-semibold text-blue-800 text-sm">Pontos de Mana</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">
+                      <div className="flex items-center gap-2">
+                        <div className="text-lg font-bold text-blue-600">
                           {characterState.currentMP}/{characterData.manaPoints}
                         </div>
-                        <div className="flex items-center gap-1 mt-1">
+                        <div className="flex gap-1">
                           <button 
                             onClick={() => adjustResource('mp', -1)}
-                            className="w-7 h-7 sm:w-6 sm:h-6 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
+                            className="w-5 h-5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs flex items-center justify-center transition-colors"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <button 
                             onClick={() => adjustResource('mp', 1)}
-                            className="w-7 h-7 sm:w-6 sm:h-6 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
+                            className="w-5 h-5 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Barra de MP */}
-                    <div className="px-4 pb-3">
-                      <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div className="mt-2">
+                      <div className="w-full bg-blue-200 rounded-full h-1.5">
                         <div 
-                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
                           style={{ width: `${Math.max(0, (characterState.currentMP / characterData.manaPoints) * 100)}%` }}
                         ></div>
                       </div>
@@ -1171,50 +1199,46 @@ const CharacterSheet: React.FC = () => {
 
                 {/* Pontos de Vigor */}
                 {characterData.vigorPoints && characterData.vigorPoints > 0 && (
-                  <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200">
-                    <div className="flex items-center justify-between p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                          <Flame className="w-5 h-5 text-white" />
+                  <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-orange-500 rounded flex items-center justify-center">
+                          <Flame className="w-4 h-4 text-white" />
                         </div>
                         <div>
-                          <div className="font-semibold text-orange-800">Pontos de Vigor</div>
-                          <div className="text-xs text-orange-600">V Atual / Máximo</div>
+                          <div className="font-semibold text-orange-800 text-sm">Pontos de Vigor</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-orange-600">
+                      <div className="flex items-center gap-2">
+                        <div className="text-lg font-bold text-orange-600">
                           {characterState.currentVigor}/{characterData.vigorPoints}
                         </div>
-                        <div className="flex items-center gap-1 mt-1">
+                        <div className="flex gap-1">
                           <button 
                             onClick={() => adjustResource('vigor', -1)}
-                            className="w-7 h-7 sm:w-6 sm:h-6 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
+                            className="w-5 h-5 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs flex items-center justify-center transition-colors"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <button 
                             onClick={() => adjustResource('vigor', 1)}
-                            className="w-7 h-7 sm:w-6 sm:h-6 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
+                            className="w-5 h-5 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Barra de Vigor */}
-                    <div className="px-4 pb-3">
-                      <div className="w-full bg-orange-200 rounded-full h-2">
+                    <div className="mt-2">
+                      <div className="w-full bg-orange-200 rounded-full h-1.5">
                         <div 
-                          className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                          className="bg-orange-500 h-1.5 rounded-full transition-all duration-300"
                           style={{ width: `${Math.max(0, (characterState.currentVigor / characterData.vigorPoints) * 100)}%` }}
                         ></div>
                       </div>
                     </div>
                   </div>
                 )}
-
 
               </div>
             </div>
@@ -1228,68 +1252,28 @@ const CharacterSheet: React.FC = () => {
                 </h3>
               </div>
               
-              <div className="p-4 sm:p-6">
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
+              <div className="p-3 sm:p-4">
+                <div className="grid grid-cols-1 gap-2 sm:gap-3">
                   {Object.entries(characterData.finalAttributes || {}).map(([key, value]) => {
                     const diceInfo = getDiceInfo(value);
                     
                     return (
                       <div 
                         key={key} 
-                        className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-3 sm:p-4 border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-purple-300 hover:scale-[1.02] active:scale-[0.98]"
+                        className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-2 border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-purple-300 hover:scale-[1.01] active:scale-[0.99]"
                         onClick={(e) => executeInlineRoll(`Teste de ${attributeNames[key]}`, 'attribute', value, undefined, undefined, e)}
                       >
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between">
                           <div>
-                            <div className="font-bold text-slate-800 text-lg">{attributeNames[key]}</div>
-                            <div className="text-xs text-slate-500 italic">{attributeEssences[key]}</div>
+                            <div className="font-bold text-slate-800 text-sm">{attributeNames[key]}</div>
+                            <div className="text-xs text-slate-500">{attributeEssences[key]}</div>
                           </div>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-slate-800">{value}</div>
-                            <div className={`text-xs font-medium ${diceInfo.color}`}>
+                            <div className="text-xl font-bold text-slate-800">{value}</div>
+                            <div className={`text-xs ${diceInfo.color}`}>
                               {diceInfo.dice}
                             </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between text-xs mb-2">
-                          <span className={`px-2 py-1 rounded-full ${
-                            diceInfo.type === 'vantagem' ? 'bg-green-100 text-green-700' :
-                            diceInfo.type === 'desvantagem' ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {diceInfo.type === 'vantagem' ? `🎯 Vantagem` : 
-                             diceInfo.type === 'desvantagem' ? `⚠️ Desvantagem` : 
-                             `⚖️ Normal`}
-                          </span>
-                          <span className="text-slate-600">
-                            🎲 Clique para rolar
-                          </span>
-                        </div>
-                        
-                        {/* Alvos de Sucesso para Atributos */}
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex gap-3">
-                            {(() => {
-                              const targets = getSuccessTargets(value);
-                              return (
-                                <>
-                                  <span className="text-green-600">
-                                    Normal: {targets.normal ? `${targets.normal}+` : '—'}
-                                  </span>
-                                  <span className="text-blue-600">
-                                    Bom: {targets.good ? `${targets.good}+` : '—'}
-                                  </span>
-                                  <span className="text-purple-600">
-                                    Extremo: {targets.extreme ? `${targets.extreme}+` : '—'}
-                                  </span>
-                                </>
-                              );
-                            })()}
-                          </div>
-                          <span className="text-slate-600 text-xs">
-                            Valor: {value}
-                          </span>
                         </div>
                       </div>
                     );
@@ -1299,9 +1283,8 @@ const CharacterSheet: React.FC = () => {
             </div>
           </div>
 
-          {/* Coluna 2: Perícias, Habilidades e Equipamentos (4 colunas) */}
-          <div className="lg:col-span-4 space-y-6">
-            
+          {/* Coluna 2: Perícias (4 colunas no XL, 3 no LG, 2 no MD) */}
+          <div className="xl:col-span-4 lg:col-span-3 md:col-span-2 space-y-4">
             {/* Perícias */}
             <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
               <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4">
@@ -1311,8 +1294,8 @@ const CharacterSheet: React.FC = () => {
                 </h3>
               </div>
               
-              <div className="p-4 sm:p-6">
-                <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
+              <div className="p-3 sm:p-4">
+                <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
                   {Object.entries(characterData.finalSkillValues || {})
                     .filter(([_, value]) => value > 0)
                     .sort((a, b) => b[1] - a[1])
@@ -1321,39 +1304,22 @@ const CharacterSheet: React.FC = () => {
                       const targets = getSuccessTargets(value);
                       
                       return (
-                        <div key={skill} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-indigo-300 hover:scale-[1.01] active:scale-[0.99]"
+                        <div key={skill} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-indigo-300 hover:scale-[1.01] active:scale-[0.99]"
                              onClick={(e) => {
                                const attributeKey = getAttributeForSkill(skill);
                                const attributeValue = characterData.finalAttributes?.[attributeKey] || 0;
                                executeInlineRoll(`Teste de ${skill}`, 'skill', attributeValue, value, undefined, e);
                              }}>
-                          <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-800">{skill}</span>
+                              <span className="font-medium text-slate-800 text-sm">{skill}</span>
                               {isTrainedSkill && (
-                                <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full font-medium">
-                                  Treinada
+                                <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">
+                                  ✓
                                 </span>
                               )}
                             </div>
-                            <div className="text-xl font-bold text-blue-600">{value}</div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between text-xs">
-                            <div className="flex gap-3">
-                              <span className="text-green-600">
-                                Normal: {targets.normal ? `${targets.normal}+` : '—'}
-                              </span>
-                              <span className="text-blue-600">
-                                Bom: {targets.good ? `${targets.good}+` : '—'}
-                              </span>
-                              <span className="text-purple-600">
-                                Extremo: {targets.extreme ? `${targets.extreme}+` : '—'}
-                              </span>
-                            </div>
-                            <span className="text-slate-600">
-                              🎲 Clique para rolar
-                            </span>
+                            <div className="text-lg font-bold text-blue-600">{value}</div>
                           </div>
                         </div>
                       );
@@ -1361,8 +1327,10 @@ const CharacterSheet: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Habilidades de Subclasse - MELHORADAS com Colapso */}
+          {/* Coluna 3: Habilidades de Subclasse */}
+          <div className="xl:col-span-4 lg:col-span-3 md:col-span-2 space-y-4">
             {characterData.selectedSubclassAbilities && characterData.selectedSubclassAbilities.length > 0 && (
               <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
                 <div 
@@ -1370,28 +1338,28 @@ const CharacterSheet: React.FC = () => {
                   onClick={() => toggleSection('abilities')}
                 >
                   <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Sword className="w-5 h-5" />
-                    Habilidades de Classe
-                  </h3>
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Sword className="w-5 h-5" />
+                      Habilidades de Classe
+                    </h3>
                     {collapsedSections.abilities ? (
                       <ChevronDown className="w-5 h-5 text-white" />
                     ) : (
                       <ChevronUp className="w-5 h-5 text-white" />
                     )}
+                  </div>
                 </div>
-          </div>
 
                 {!collapsedSections.abilities && (
-                  <div className="p-4 sm:p-6">
-                    <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
+                  <div className="p-4">
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
                       {/* Habilidade de Nível 1 se existir */}
                       {subclassData[characterData.subclass!]?.level1Ability && (
                         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 border border-indigo-200 hover:shadow-md transition-all duration-200">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-slate-800">Sintonia Inicial</span>
-                              <span className="text-xs bg-indigo-500 text-white px-2 py-1 rounded-full font-medium">
+                              <span className="text-xs bg-indigo-500 text-white px-2 py-1 rounded-full">
                                 Nv 1
                               </span>
                             </div>
@@ -1422,24 +1390,17 @@ const CharacterSheet: React.FC = () => {
                           >
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
-                                <span className="font-medium text-slate-800">{ability}</span>
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                <span className="font-medium text-slate-800 text-sm">{ability}</span>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
                                   isActive ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
                                 }`}>
-                                  {isActive ? '⚡ Ativa' : '🛡️ Passiva'}
+                                  {isActive ? '⚡' : '🛡️'}
                                 </span>
                               </div>
                             </div>
-                            
-                            <div className="text-sm text-red-700 leading-relaxed mb-2">
+                            <div className="text-sm text-red-700 leading-relaxed">
                               {description}
                             </div>
-                            
-                            {isActive && (
-                              <div className="text-xs text-green-600 font-medium">
-                                🎲 Clique para rolar teste da habilidade
-                              </div>
-                            )}
                           </div>
                         );
                       })}
@@ -1456,10 +1417,10 @@ const CharacterSheet: React.FC = () => {
                 onClick={() => toggleSection('equipment')}
               >
                 <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Equipamentos & Posses
-                </h3>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    Equipamentos & Posses
+                  </h3>
                   {collapsedSections.equipment ? (
                     <ChevronDown className="w-5 h-5 text-white" />
                   ) : (
@@ -1469,9 +1430,9 @@ const CharacterSheet: React.FC = () => {
               </div>
               
               {!collapsedSections.equipment && (
-                <div className="p-4 sm:p-6">
-                  <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
-                    {/* Equipamento Básico */}
+                <div className="p-4">
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                {/* Equipamento Básico */}
                     {initialFreeEquipment.map((item) => (
                       <div key={item.id} className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-3 border border-gray-200 hover:shadow-md transition-all duration-200">
                         <div className="flex items-center justify-between mb-2">
@@ -1480,25 +1441,25 @@ const CharacterSheet: React.FC = () => {
                             <span className="text-xs bg-emerald-500 text-white px-2 py-1 rounded-full font-medium">
                               Básico
                             </span>
-                          </div>
-                        </div>
+                      </div>
+                  </div>
                         {item.description && (
                           <div className="text-sm text-slate-600 leading-relaxed">
                             {item.description}
-                          </div>
+                </div>
                         )}
                       </div>
                     ))}
 
-                    {/* Equipamentos Comprados */}
-                    {characterData.selectedEquipment && characterData.selectedEquipment.length > 0 && (
+                {/* Equipamentos Comprados */}
+                {characterData.selectedEquipment && characterData.selectedEquipment.length > 0 && (
                       <>
-                        {characterData.selectedEquipment.map((equipId) => {
-                          const item = equipment[equipId];
-                          if (!item) return null;
-                          
+                      {characterData.selectedEquipment.map((equipId) => {
+                        const item = equipment[equipId];
+                        if (!item) return null;
+                        
                           const getItemGradient = () => {
-                            switch (item.category) {
+                          switch (item.category) {
                               case 'weapon': return 'from-red-50 to-pink-50';
                               case 'armor': return 'from-blue-50 to-indigo-50';
                               default: return 'from-green-50 to-emerald-50';
@@ -1522,8 +1483,8 @@ const CharacterSheet: React.FC = () => {
                           };
                           
                           const isWeapon = item.category === 'weapon';
-                          
-                          return (
+                        
+                        return (
                             <div 
                               key={equipId} 
                               className={`bg-gradient-to-r ${getItemGradient()} rounded-lg p-3 border ${getItemBorder()} hover:shadow-md transition-all duration-200 ${
@@ -1542,18 +1503,18 @@ const CharacterSheet: React.FC = () => {
                                     {item.category === 'weapon' ? '⚔️ Arma' : 
                                      item.category === 'armor' ? '🛡️ Armadura' : 
                                      '📦 Item'}
-                                  </span>
-                                </div>
+                            </span>
+                          </div>
                                 <div className="text-sm font-bold text-slate-600">
                                   {item.priceUnit === 'Ef' ? `${item.price} Ef` : `${item.price} EfP`}
-                                </div>
+                    </div>
                               </div>
                               
                               {item.description && (
                                 <div className="text-sm text-slate-600 leading-relaxed mb-2">
                                   {item.description}
-                                </div>
-                              )}
+                  </div>
+                )}
                               
                               {isWeapon && item.damage && (
                                 <div className="text-xs text-red-600 font-medium">
@@ -1575,47 +1536,47 @@ const CharacterSheet: React.FC = () => {
                       </>
                     )}
                   </div>
-                  
-                  {/* Resumo Financeiro */}
-                  {characterData.remainingGold !== undefined && (
-                    <div className="mt-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-4">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                          <Coins className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-yellow-800">Dinheiro Restante</div>
-                          <div className="text-xs text-yellow-600">Elfens (Ef) disponíveis</div>
-                        </div>
-                      </div>
-                      <div className="text-2xl font-bold text-yellow-600">
-                        {characterData.remainingGold.toFixed(1)} Ef
-                      </div>
-                    </div>
-                  )}
 
-                  {/* Data de Criação */}
-                  {characterData.createdAt && (
-                    <div className="pt-4 border-t border-gray-200">
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <Calendar className="w-3 h-3" />
-                        Herói criado em {new Date(characterData.createdAt).toLocaleDateString('pt-BR', {
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                {/* Resumo Financeiro */}
+                {characterData.remainingGold !== undefined && (
+                    <div className="mt-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                        <Coins className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-yellow-800">Dinheiro Restante</div>
+                        <div className="text-xs text-yellow-600">Elfens (Ef) disponíveis</div>
                       </div>
                     </div>
-                  )}
-                </div>
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {characterData.remainingGold.toFixed(1)} Ef
+                    </div>
+                  </div>
+                )}
+
+                {/* Data de Criação */}
+                {characterData.createdAt && (
+                  <div className="pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Calendar className="w-3 h-3" />
+                      Herói criado em {new Date(characterData.createdAt).toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
               )}
             </div>
           </div>
 
-          {/* Coluna 3: Aspectos Narrativos e RPG (4 colunas) */}
-          <div className="lg:col-span-4 space-y-6">
+          {/* Coluna 4: Aspectos Narrativos e RPG (4 colunas no XL, 3 no LG, 2 no MD) */}
+          <div className="xl:col-span-4 lg:col-span-3 md:col-span-2 space-y-4">
             
             {/* Informações do Personagem - MELHORADA com Colapso */}
             <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
@@ -1637,7 +1598,7 @@ const CharacterSheet: React.FC = () => {
       </div>
 
               {!collapsedSections.identity && (
-                <div className="p-6 space-y-5">
+                <div className="p-4 space-y-4">
                   {/* Informações Básicas */}
                   <div className="grid grid-cols-1 gap-4">
                     {/* Linhagem e Origem */}
@@ -1966,6 +1927,74 @@ const CharacterSheet: React.FC = () => {
           onAddTransaction={addTransaction}
           onAdjustMoney={adjustMoney}
         />
+      )}
+
+      {/* Sistema de Combate */}
+      {showCombatSystem && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-500 to-rose-500">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Sword className="w-6 h-6 text-white" />
+                  <h3 className="text-xl font-bold text-white">
+                    Sistema de Combate - {characterData.personalDetails?.name}
+                  </h3>
+                </div>
+                <button 
+                  onClick={() => setShowCombatSystem(false)}
+                  className="text-white hover:text-gray-200 text-2xl font-bold p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="overflow-auto max-h-[calc(95vh-80px)]">
+              <CombatManager
+                characters={savedCharacter ? [{
+                  id: savedCharacter.id,
+                  name: savedCharacter.data.personalDetails?.name || 'Personagem Sem Nome',
+                  age: 0,
+                  height: '',
+                  attributes: {
+                    forca: savedCharacter.data.finalAttributes?.forca || 0,
+                    destreza: savedCharacter.data.finalAttributes?.destreza || 0,
+                    constituicao: savedCharacter.data.finalAttributes?.constituicao || 0,
+                    inteligencia: savedCharacter.data.finalAttributes?.inteligencia || 0,
+                    sabedoria: savedCharacter.data.finalAttributes?.sabedoria || 0,
+                    carisma: savedCharacter.data.finalAttributes?.carisma || 0
+                  },
+                  race: (savedCharacter.data.race as any) || 'kain',
+                  mainClass: (savedCharacter.data.mainClass as any) || 'titã',
+                  subclass: (savedCharacter.data.subclass as any) || 'baluarte',
+                  origin: (savedCharacter.data.origin as any) || 'sobrevivente-brasas',
+                  deity: (savedCharacter.data.deity as any) || null,
+                  level: savedCharacter.data.level || 1,
+                  hitPoints: {
+                    current: characterState.currentHP,
+                    maximum: savedCharacter.data.hitPoints || 0
+                  },
+                  manaPoints: {
+                    current: characterState.currentMP,
+                    maximum: savedCharacter.data.manaPoints || 0
+                  },
+                  vigor: savedCharacter.data.vigorPoints ? {
+                    current: characterState.currentVigor,
+                    maximum: savedCharacter.data.vigorPoints
+                  } : undefined,
+                  skills: savedCharacter.data.finalSkillValues || {},
+                  abilities: savedCharacter.data.selectedSubclassAbilities || [],
+                  equipment: [],
+                  gold: characterState.currentMoney,
+                  createdAt: new Date(savedCharacter.data.createdAt || new Date()),
+                  updatedAt: new Date()
+                }] : []}
+                onClose={() => setShowCombatSystem(false)}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Resultado de Rolagem Rápida */}

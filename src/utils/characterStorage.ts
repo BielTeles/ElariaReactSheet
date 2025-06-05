@@ -309,12 +309,33 @@ export class CharacterStorage {
     const characters = this.getAllCharacters();
     const character = characters.find(char => char.id === id) || null;
     
-    // Migrar personagem antigo se necessário
+    // Migrar personagem antigo se necessário e salvar se foi migrado
     if (character) {
-      return this.migrateCharacterData(character);
+      const migratedCharacter = this.migrateCharacterData(character);
+      
+      // Se houve mudanças na migração, salvar
+      if (migratedCharacter !== character) {
+        this.saveCharacterDirectly(migratedCharacter);
+      }
+      
+      return migratedCharacter;
     }
     
-    return character;
+    return null;
+  }
+
+  // Salvar personagem diretamente (sem validação extra)
+  private static saveCharacterDirectly(character: SavedCharacter): void {
+    const characters = this.getAllCharacters();
+    const index = characters.findIndex(char => char.id === character.id);
+    
+    if (index >= 0) {
+      characters[index] = character;
+    } else {
+      characters.push(character);
+    }
+    
+    this.saveToStorage(characters);
   }
 
   // Migrar dados de personagem para versões mais novas
@@ -387,13 +408,8 @@ export class CharacterStorage {
         lastModified: new Date()
       };
       
-      // Salvar a versão migrada
-      const characters = this.getAllCharacters();
-      const index = characters.findIndex(char => char.id === character.id);
-      if (index >= 0) {
-        characters[index] = updatedCharacter;
-        this.saveToStorage(characters);
-      }
+      // Salvar migração será feita apenas quando saveCharacter for chamado
+      // Removemos a chamada recursiva aqui para evitar loop infinito
       
       return updatedCharacter;
     }
@@ -409,17 +425,12 @@ export class CharacterStorage {
       
       const characters = JSON.parse(stored) as SavedCharacter[];
       
-      // Converter datas de volta para objetos Date e aplicar migrações
-      return characters.map(char => {
-        const characterWithDates = {
-          ...char,
-          createdAt: new Date(char.createdAt),
-          lastModified: new Date(char.lastModified)
-        };
-        
-        // Aplicar migração se necessário
-        return this.migrateCharacterData(characterWithDates);
-      });
+      // Converter datas de volta para objetos Date
+      return characters.map(char => ({
+        ...char,
+        createdAt: new Date(char.createdAt),
+        lastModified: new Date(char.lastModified)
+      }));
     } catch (error) {
       console.error('Erro ao carregar personagens:', error);
       return [];
@@ -592,6 +603,27 @@ export class CharacterStorage {
   }
 
   // Limpar todos os personagens (com confirmação)
+  // Limpar dados corrompidos do localStorage (usar em caso de emergência)
+  static emergency_clearCorruptedData(): boolean {
+    try {
+      // Limpar todos os dados relacionados aos personagens
+      const keys = Object.keys(localStorage);
+      const keysToRemove = keys.filter(key => 
+        key.startsWith('elaria-rpg-characters') || 
+        key.includes('character-history') ||
+        key.includes('elaria-backup')
+      );
+      
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      console.log('✅ Dados corrompidos removidos com sucesso');
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao limpar dados corrompidos:', error);
+      return false;
+    }
+  }
+
   static clearAllCharacters(): boolean {
     try {
       // Parar todos os auto-saves

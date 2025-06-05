@@ -133,14 +133,14 @@ const CharacterList: React.FC = () => {
   const stats = CharacterStorage.getStats();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-white shadow-lg border-b">
+      <div className="bg-gradient-to-r from-slate-800 to-slate-700 shadow-2xl border-b border-slate-600">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800 mb-2">Meus Personagens</h1>
-              <p className="text-slate-600">
+              <h1 className="text-3xl font-bold text-white mb-2">Meus Personagens</h1>
+              <p className="text-slate-300">
                 {characters.length} personagem{characters.length !== 1 ? 's' : ''} criado{characters.length !== 1 ? 's' : ''}
               </p>
             </div>
@@ -149,7 +149,7 @@ const CharacterList: React.FC = () => {
               {/* Botão de Configurações */}
               <button
                 onClick={() => setShowSaveSettings(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-slate-100 rounded-lg hover:bg-slate-500 transition-colors"
               >
                 <Settings className="w-4 h-4" />
                 Configurações
@@ -158,14 +158,14 @@ const CharacterList: React.FC = () => {
               {/* Botão de Estatísticas */}
               <button
                 onClick={() => setShowStats(!showStats)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-blue-100 rounded-lg hover:bg-blue-500 transition-colors"
               >
                 <BarChart3 className="w-4 h-4" />
                 Estatísticas
               </button>
 
               {/* Import */}
-              <label className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors cursor-pointer">
+              <label className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-purple-100 rounded-lg hover:bg-purple-500 transition-colors cursor-pointer">
                 <Upload className="w-4 h-4" />
                 Importar
                 <input
