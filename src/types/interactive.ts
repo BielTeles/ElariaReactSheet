@@ -1,22 +1,17 @@
 export interface DiceRoll {
   id: string;
   timestamp: Date | string;
-  type: 'attribute' | 'skill' | 'damage' | 'custom' | 'initiative' | 'resistance';
+  type: 'attribute' | 'skill' | 'damage' | 'initiative' | 'custom';
   name: string;
   attributeValue?: number;
   skillValue?: number;
   diceRolled: number[];
   finalResult: number;
-  successLevel: 'failure-extreme' | 'failure-normal' | 'success-normal' | 'success-good' | 'success-extreme' | null;
-  
-  // Novos campos para rolagens avançadas
+  successLevel?: 'success-extreme' | 'success-good' | 'success-normal' | 'failure-normal' | 'failure-extreme' | null;
+  rollPurpose?: string;
   modifier?: number;
-  customDice?: string; // Ex: "3d6", "1d8+2", "2d20"
-  damageType?: string;
+  customDice?: string;
   notes?: string;
-  advantage?: boolean;
-  disadvantage?: boolean;
-  rollPurpose?: string; // Ex: "Ataque", "Dano", "Resistência"
 }
 
 export interface CharacterState {
@@ -27,8 +22,13 @@ export interface CharacterState {
   conditions: string[];
   equippedWeapon?: string;
   equippedArmor?: string;
+  equippedShield?: string;
+  equippedAccessories?: string[];
   rollHistory: DiceRoll[];
   notes: CharacterNote[];
+  currentMoney: number;
+  transactions: Transaction[];
+  inventory: InventoryItem[];
 }
 
 export interface ResourceChange {
@@ -37,7 +37,6 @@ export interface ResourceChange {
   reason: string;
 }
 
-// Nova interface para configurações de rolagem
 export interface RollSettings {
   showAnimation: boolean;
   animationSpeed: 'fast' | 'normal' | 'slow';
@@ -45,11 +44,10 @@ export interface RollSettings {
   soundEnabled: boolean;
 }
 
-// Interface para rolagens personalizadas
 export interface CustomRoll {
   id: string;
   name: string;
-  dice: string; // Ex: "1d20+5", "3d6"
+  dice: string;
   description?: string;
   category: 'combat' | 'skill' | 'damage' | 'utility' | 'custom';
 }
@@ -58,9 +56,45 @@ export interface CharacterNote {
   id: string;
   title: string;
   content: string;
-  category: 'general' | 'session' | 'character' | 'plot' | 'combat' | 'custom';
+  category: 'geral' | 'personagem' | 'sessao' | 'enredo' | 'combate' | 'personalizada';
   tags: string[];
-  createdAt: Date | string;
-  updatedAt: Date | string;
   isPrivate: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Transaction {
+  id: string;
+  timestamp: Date;
+  type: 'income' | 'expense';
+  amount: number;
+  source: 'purchase' | 'sale' | 'reward' | 'manual' | 'loot' | 'payment' | 'other';
+  description: string;
+  itemId?: string;
+  balanceBefore: number;
+  balanceAfter: number;
+}
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  category: 'weapon' | 'armor' | 'item';
+  price: number;
+  basePrice: number;
+  priceUnit: 'Ef' | 'EfP';
+  rarity: 'common';
+  isAvailable: boolean;
+}
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  equipmentId: string;
+  quantity: number;
+  purchaseDate: Date;
+  purchasePrice: number;
+  source: 'purchase' | 'loot' | 'gift' | 'starting';
+  isEquipped: boolean;
+  notes?: string;
 } 

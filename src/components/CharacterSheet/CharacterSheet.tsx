@@ -6,7 +6,7 @@ import {
   Calendar, Dice6, Eye, Brain, Target, Flame,
   Crown, Mountain, Feather, Sparkles, Sun,
   Plus, Minus, ChevronDown, ChevronUp,
-  BookOpen
+  BookOpen, ShoppingCart
 } from 'lucide-react';
 import { races } from '../../data/races';
 import { classes, subclassData } from '../../data/classes';
@@ -15,7 +15,8 @@ import { deities } from '../../data/deities';
 import { equipment, initialFreeEquipment } from '../../data/equipment';
 import DiceRoller from '../DiceRoller/DiceRoller';
 import NotesSystem from '../NotesSystem/NotesSystem';
-import { DiceRoll, CharacterState, CharacterNote } from '../../types/interactive';
+import ShopSystem from '../ShopSystem/ShopSystem';
+import { DiceRoll, CharacterState, CharacterNote, Transaction, InventoryItem, ShopItem } from '../../types/interactive';
 import { CharacterStorage, SavedCharacter } from '../../utils/characterStorage';
 
 interface CharacterData {
@@ -53,6 +54,7 @@ const CharacterSheet: React.FC = () => {
   const [showSuccessTable, setShowSuccessTable] = useState(false);
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [showNotesSystem, setShowNotesSystem] = useState(false);
+  const [showShopSystem, setShowShopSystem] = useState(false);
   
   // ID do personagem salvo (se aplicável)
   const characterId = location.state?.characterId;
@@ -66,7 +68,16 @@ const CharacterSheet: React.FC = () => {
     tempHP: 0,
     conditions: [],
     rollHistory: [],
-    notes: []
+    notes: [],
+    // Sistema financeiro
+    currentMoney: 0,
+    transactions: [],
+    inventory: [],
+    // Equipamentos equipados
+    equippedWeapon: undefined,
+    equippedArmor: undefined,
+    equippedShield: undefined,
+    equippedAccessories: []
   });
   
   const characterData: CharacterData = location.state?.characterData || savedCharacter?.data || {};
@@ -106,6 +117,38 @@ const CharacterSheet: React.FC = () => {
       const loaded = CharacterStorage.loadCharacter(characterId);
       if (loaded) {
         setSavedCharacter(loaded);
+        
+        // Migração: converter selectedEquipment para inventário se necessário
+        let migratedInventory = loaded.state.inventory || [];
+        if (loaded.data.selectedEquipment && loaded.data.selectedEquipment.length > 0) {
+          // Verificar quais equipamentos não estão no inventário
+          const existingEquipmentIds = migratedInventory.map(item => item.equipmentId);
+          const missingEquipments = loaded.data.selectedEquipment.filter(
+            equipId => !existingEquipmentIds.includes(equipId)
+          );
+          
+          // Adicionar equipamentos faltantes
+          if (missingEquipments.length > 0) {
+            const newInventoryItems: InventoryItem[] = missingEquipments.map(equipId => {
+              const equipmentData = equipment[equipId];
+              if (!equipmentData) return null;
+              
+              return {
+                id: `migrated-${equipId}-${Date.now()}`,
+                name: equipmentData.name,
+                equipmentId: equipId,
+                quantity: 1,
+                purchaseDate: new Date(loaded.data.createdAt || new Date()),
+                purchasePrice: equipmentData.price,
+                source: 'starting' as const,
+                isEquipped: false
+              };
+            }).filter(Boolean) as InventoryItem[];
+            
+            migratedInventory = [...migratedInventory, ...newInventoryItems];
+          }
+        }
+        
         // Garantir que o estado carregado tenha todos os campos necessários
         // IMPORTANTE: Usar valores salvos exatos (incluindo 0), só usar fallback se undefined
         const stateWithDefaults = {
@@ -115,9 +158,23 @@ const CharacterSheet: React.FC = () => {
           tempHP: loaded.state.tempHP || 0,
           conditions: loaded.state.conditions || [],
           rollHistory: loaded.state.rollHistory || [],
-          notes: loaded.state.notes || [] // Garantir que notes existe
+          notes: loaded.state.notes || [], // Garantir que notes existe
+          currentMoney: loaded.state.currentMoney || 0,
+          transactions: loaded.state.transactions || [],
+          inventory: migratedInventory,
+          equippedWeapon: loaded.state.equippedWeapon,
+          equippedArmor: loaded.state.equippedArmor,
+          equippedShield: loaded.state.equippedShield,
+          equippedAccessories: loaded.state.equippedAccessories || []
         };
         setCharacterState(stateWithDefaults);
+        
+        // Salvar o estado migrado se houve mudanças no inventário
+        if (migratedInventory.length !== (loaded.state.inventory || []).length) {
+          setTimeout(() => {
+            CharacterStorage.updateCharacterState(characterId, stateWithDefaults, 'Migração de equipamentos para inventário');
+          }, 100);
+        }
       }
     }
   }, [characterId, savedCharacter]);
@@ -150,7 +207,8 @@ const CharacterSheet: React.FC = () => {
         ...prev,
         currentHP: characterData.hitPoints || 0,
         currentMP: characterData.manaPoints || 0,
-        currentVigor: characterData.vigorPoints || 0
+        currentVigor: characterData.vigorPoints || 0,
+        currentMoney: characterData.remainingGold || 0
       }));
     }
   }, [characterData, characterState.currentHP, characterId]);
@@ -188,16 +246,7 @@ const CharacterSheet: React.FC = () => {
     });
   };
 
-  // Função de rolagem de dados
-  const rollAttribute = (attributeName: string, attributeValue: number) => {
-    setShowDiceRoller(true);
-    // A rolagem será feita pelo componente DiceRoller
-  };
 
-  const rollSkill = (skillName: string, skillValue: number, attributeValue: number) => {
-    setShowDiceRoller(true);
-    // A rolagem será feita pelo componente DiceRoller  
-  };
 
   const addRollToHistory = (roll: DiceRoll) => {
     setCharacterState(prev => ({
@@ -237,6 +286,112 @@ const CharacterSheet: React.FC = () => {
       ...prev,
       notes: (prev.notes || []).filter(note => note.id !== noteId)
     }));
+  };
+
+  // Funções de gerenciamento financeiro
+  const addTransaction = (transactionData: Omit<Transaction, 'id' | 'timestamp' | 'balanceBefore' | 'balanceAfter'>) => {
+    const newTransaction: Transaction = {
+      ...transactionData,
+      id: Date.now().toString(),
+      timestamp: new Date(),
+      balanceBefore: characterState.currentMoney,
+      balanceAfter: characterState.currentMoney + (transactionData.type === 'income' ? transactionData.amount : -transactionData.amount)
+    };
+    
+    setCharacterState(prev => ({
+      ...prev,
+      currentMoney: newTransaction.balanceAfter,
+      transactions: [...(prev.transactions || []), newTransaction]
+    }));
+  };
+
+  const adjustMoney = (amount: number, description: string, source: Transaction['source'] = 'manual') => {
+    const type: 'income' | 'expense' = amount >= 0 ? 'income' : 'expense';
+    addTransaction({
+      type,
+      amount: Math.abs(amount),
+      source,
+      description
+    });
+  };
+
+  const handlePurchase = (item: ShopItem, quantity: number, finalPrice: number) => {
+    // Verificar se tem dinheiro suficiente
+    const totalCost = finalPrice * quantity;
+    if (totalCost > characterState.currentMoney) {
+      alert('Dinheiro insuficiente!');
+      return;
+    }
+
+    // Criar transação de compra
+    addTransaction({
+      type: 'expense',
+      amount: totalCost,
+      source: 'purchase',
+      description: `Compra: ${item.name} x${quantity}`,
+      itemId: item.id
+    });
+
+    // Verificar se já existe o item no inventário
+    const existingItem = characterState.inventory?.find(inv => inv.equipmentId === item.id);
+    
+    if (existingItem) {
+      // Se já existe, atualizar quantidade
+      setCharacterState(prev => ({
+        ...prev,
+        inventory: (prev.inventory || []).map(inv => 
+          inv.equipmentId === item.id 
+            ? { ...inv, quantity: inv.quantity + quantity }
+            : inv
+        )
+      }));
+    } else {
+      // Se não existe, criar novo item
+      const inventoryItem: InventoryItem = {
+        id: `${Date.now()}`,
+        name: item.name,
+        equipmentId: item.id,
+        quantity: quantity,
+        purchaseDate: new Date(),
+        purchasePrice: finalPrice,
+        source: 'purchase',
+        isEquipped: false
+      };
+
+      setCharacterState(prev => ({
+        ...prev,
+        inventory: [...(prev.inventory || []), inventoryItem]
+      }));
+    }
+  };
+
+  const handleSell = (inventoryItem: InventoryItem, sellPrice: number) => {
+    // Criar transação de venda
+    addTransaction({
+      type: 'income',
+      amount: sellPrice,
+      source: 'sale',
+      description: `Venda: ${inventoryItem.name}`,
+      itemId: inventoryItem.equipmentId
+    });
+
+    // Diminuir quantidade ou remover item
+    if (inventoryItem.quantity > 1) {
+      setCharacterState(prev => ({
+        ...prev,
+        inventory: (prev.inventory || []).map(item => 
+          item.id === inventoryItem.id 
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        )
+      }));
+    } else {
+      // Remover do inventário se quantidade for 1
+      setCharacterState(prev => ({
+        ...prev,
+        inventory: (prev.inventory || []).filter(item => item.id !== inventoryItem.id)
+      }));
+    }
   };
 
   // Função para executar rolagem integrada
@@ -288,9 +443,12 @@ const CharacterSheet: React.FC = () => {
           finalResult = diceResults[0];
         }
 
-        // Para perícias e iniciativa, consultar tabela de sucessos
+        // Para perícias, iniciativa e atributos, consultar tabela de sucessos
         if ((type === 'skill' || type === 'initiative') && skillValue) {
           successLevel = determineSuccess(finalResult, skillValue);
+        } else if (type === 'attribute' && attributeValue !== undefined) {
+          // Para atributos, usar o próprio valor do atributo como valor de teste
+          successLevel = determineSuccess(finalResult, attributeValue);
         }
 
         breakdown = `${diceResults.join(', ')} → ${takeType === 'highest' ? 'maior' : takeType === 'lowest' ? 'menor' : 'único'}: ${finalResult}`;
@@ -348,6 +506,22 @@ const CharacterSheet: React.FC = () => {
   };
 
   const determineSuccess = (result: number, skillValue: number): DiceRoll['successLevel'] => {
+    // Regras especiais para valores baixos
+    if (skillValue <= -1) {
+      // Valor -1 ou menos: apenas 20 natural resulta em sucesso extremo
+      if (result === 20) return 'success-extreme';
+      if (result === 1) return 'failure-extreme';
+      return 'failure-normal';
+    }
+    
+    if (skillValue === 0) {
+      // Valor 0: apenas 20 natural resulta em sucesso extremo
+      if (result === 20) return 'success-extreme';
+      if (result === 1) return 'failure-extreme';
+      return 'failure-normal';
+    }
+
+    // Regras normais para valores 1+
     if (result === 20) return 'success-extreme';
     if (result === 1) return 'failure-extreme';
 
@@ -592,6 +766,8 @@ const CharacterSheet: React.FC = () => {
   // Planilha de sucessos conforme o livro
   const getSuccessTargets = (skillValue: number) => {
     const successTable: Record<number, { normal: number | null, good: number | null, extreme: number | null }> = {
+      '-1': { normal: null, good: null, extreme: null }, // Valor -1: Sempre fracasso (só 20 para extremo)
+      0: { normal: null, good: null, extreme: 20 }, // Valor 0: Só sucesso extremo no 20
       1: { normal: 20, good: null, extreme: null },
       2: { normal: 19, good: 20, extreme: null },
       3: { normal: 18, good: 20, extreme: null },
@@ -614,7 +790,14 @@ const CharacterSheet: React.FC = () => {
       20: { normal: 2, good: 11, extreme: 16 }
     };
 
-    return successTable[Math.min(skillValue, 20)] || successTable[20];
+    // Tratar valores especiais
+    if (skillValue <= -1) {
+      return successTable['-1'];
+    } else if (skillValue === 0) {
+      return successTable[0];
+    } else {
+      return successTable[Math.min(skillValue, 20)] || successTable[20];
+    }
   };
 
   const getTrainedSkills = () => {
@@ -676,109 +859,118 @@ const CharacterSheet: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
-      {/* Header Épico - MELHORADO */}
+      {/* Header Épico - CORRIGIDO */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-700 shadow-2xl border-b border-slate-600">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            {/* Seção Principal do Personagem */}
+            <div className="flex items-center gap-4 sm:gap-6 flex-1 min-w-0">
               <button
                 onClick={() => navigate('/characters')}
-                className="p-3 hover:bg-slate-600 rounded-xl transition-colors group"
+                className="flex-shrink-0 p-2 sm:p-3 hover:bg-slate-600 rounded-xl transition-colors group"
               >
-                <ArrowLeft className="w-6 h-6 text-slate-300 group-hover:text-white" />
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-slate-300 group-hover:text-white" />
               </button>
               
-              <div className="flex items-center gap-6">
-                {/* Avatar do Personagem */}
-                <div className="relative">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg border-2 border-slate-600">
+              {/* Avatar do Personagem */}
+              <div className="relative flex-shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg border-2 border-slate-600">
                   {getClassIcon(characterData.mainClass)}
                 </div>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center text-sm font-bold text-white shadow-lg">
-                    {characterData.level || 1}
-                  </div>
+                <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold text-white shadow-lg">
+                  {characterData.level || 1}
+                </div>
+              </div>
+              
+              {/* Identidade Principal */}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 truncate">
+                  {characterData.personalDetails?.name}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-slate-300 mb-1 sm:mb-2">
+                  <span className="flex items-center gap-1 sm:gap-2 bg-slate-700 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
+                    <Crown className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="font-medium">{raceData?.name}</span>
+                  </span>
+                  <span className="flex items-center gap-1 sm:gap-2 bg-slate-700 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
+                    {getClassIcon(characterData.mainClass)}
+                    <span className="font-medium">{classData?.name}</span>
+                  </span>
+                  <span className="flex items-center gap-1 sm:gap-2 bg-slate-700 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
+                    <Star className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="font-medium">{characterData.subclass}</span>
+                  </span>
                 </div>
                 
-                {/* Identidade Principal */}
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">
-                    {characterData.personalDetails?.name}
-                  </h1>
-                  <div className="flex items-center gap-4 text-slate-300 mb-2">
-                    <span className="flex items-center gap-2 bg-slate-700 px-3 py-1 rounded-lg">
-                      <Crown className="w-4 h-4" />
-                      <span className="font-medium">{raceData?.name}</span>
+                {/* Essências e Patrono */}
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                  {deityData && (
+                    <span className="flex items-center gap-1 text-amber-300">
+                      <span className="text-sm sm:text-lg">{getDeityIcon(characterData.deity)}</span>
+                      <span>Protegido por {deityData.name}</span>
                     </span>
-                    <span className="flex items-center gap-2 bg-slate-700 px-3 py-1 rounded-lg">
-                      {getClassIcon(characterData.mainClass)}
-                      <span className="font-medium">{classData?.name}</span>
+                  )}
+                  {originData && (
+                    <span className="text-slate-400">
+                      {originData.name.replace(/^.+?(?=\s)/, '')}
                     </span>
-                    <span className="flex items-center gap-2 bg-slate-700 px-3 py-1 rounded-lg">
-                      <Star className="w-4 h-4" />
-                      <span className="font-medium">{characterData.subclass}</span>
-                    </span>
-                  </div>
-                  
-                  {/* Essências e Patrono */}
-                  <div className="flex items-center gap-4 text-sm">
-                    {deityData && (
-                      <span className="flex items-center gap-1 text-amber-300">
-                        <span className="text-lg">{getDeityIcon(characterData.deity)}</span>
-                        <span>Protegido por {deityData.name}</span>
-                      </span>
-                    )}
-                    {originData && (
-                      <span className="text-slate-400">
-                        {originData.name.replace(/^.+?(?=\s)/, '')}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
             
             {/* Controles */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full lg:w-auto">
               {isNewCharacter && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow-lg">
-                  <Sparkles className="w-4 h-4" />
-                  <span className="text-sm font-medium">Novo Herói!</span>
+                <div className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow-lg text-xs sm:text-sm">
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="font-medium">Novo Herói!</span>
                 </div>
               )}
               
               <button
                 onClick={() => setShowSuccessTable(!showSuccessTable)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-lg text-xs sm:text-sm"
               >
-                <Dice6 className="w-4 h-4" />
-                Planilha de Sucessos
+                <Dice6 className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Planilha de Sucessos</span>
+                <span className="sm:hidden">Planilha</span>
               </button>
 
               <button
                 onClick={() => setShowDiceRoller(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-lg"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-lg text-xs sm:text-sm"
               >
-                <Dice6 className="w-4 h-4" />
-                Sistema de Rolagem
+                <Dice6 className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Sistema de Rolagem</span>
+                <span className="sm:hidden">Rolagem</span>
               </button>
               
               <button
                 onClick={() => setShowNotesSystem(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg hover:from-indigo-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-lg hover:from-indigo-600 hover:to-blue-700 transition-all duration-200 shadow-lg text-xs sm:text-sm"
               >
-                <BookOpen className="w-4 h-4" />
-                Notas ({(characterState.notes || []).length})
+                <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Notas ({(characterState.notes || []).length})</span>
+              </button>
+              
+              <button
+                onClick={() => setShowShopSystem(true)}
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 shadow-lg text-xs sm:text-sm"
+              >
+                <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Loja</span>
               </button>
               
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 shadow-lg ${
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-lg transition-all duration-200 shadow-lg text-xs sm:text-sm ${
                   isEditing 
                     ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
                     : 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white hover:from-blue-600 hover:to-cyan-700'
                 }`}
               >
-                {isEditing ? <Save className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+                {isEditing ? <Save className="w-3 h-3 sm:w-4 sm:h-4" /> : <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />}
                 {isEditing ? 'Salvar' : 'Editar'}
               </button>
             </div>
@@ -872,7 +1064,7 @@ const CharacterSheet: React.FC = () => {
 
       {/* Conteúdo Principal */}
       <div className="max-w-7xl mx-auto p-6">
-        <div className="grid lg:grid-cols-12 gap-6">
+                  <div className="grid lg:grid-cols-12 gap-4 sm:gap-6">
           
           {/* Coluna 1: Atributos e Combate (4 colunas) */}
           <div className="lg:col-span-4 space-y-6">
@@ -903,20 +1095,20 @@ const CharacterSheet: React.FC = () => {
                       <div className="text-2xl font-bold text-red-600">
                         {characterState.currentHP}/{characterData.hitPoints}
                       </div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <button 
-                          onClick={() => adjustResource('hp', -1)}
-                          className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded text-xs flex items-center justify-center transition-colors"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <button 
-                          onClick={() => adjustResource('hp', 1)}
-                          className="w-6 h-6 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
+                                              <div className="flex items-center gap-1 mt-1">
+                          <button 
+                            onClick={() => adjustResource('hp', -1)}
+                            className="w-7 h-7 sm:w-6 sm:h-6 bg-red-500 hover:bg-red-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <button 
+                            onClick={() => adjustResource('hp', 1)}
+                            className="w-7 h-7 sm:w-6 sm:h-6 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
                     </div>
                   </div>
                   
@@ -951,13 +1143,13 @@ const CharacterSheet: React.FC = () => {
                         <div className="flex items-center gap-1 mt-1">
                           <button 
                             onClick={() => adjustResource('mp', -1)}
-                            className="w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs flex items-center justify-center transition-colors"
+                            className="w-7 h-7 sm:w-6 sm:h-6 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <button 
                             onClick={() => adjustResource('mp', 1)}
-                            className="w-6 h-6 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors"
+                            className="w-7 h-7 sm:w-6 sm:h-6 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
@@ -997,13 +1189,13 @@ const CharacterSheet: React.FC = () => {
                         <div className="flex items-center gap-1 mt-1">
                           <button 
                             onClick={() => adjustResource('vigor', -1)}
-                            className="w-6 h-6 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs flex items-center justify-center transition-colors"
+                            className="w-7 h-7 sm:w-6 sm:h-6 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <button 
                             onClick={() => adjustResource('vigor', 1)}
-                            className="w-6 h-6 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors"
+                            className="w-7 h-7 sm:w-6 sm:h-6 bg-green-500 hover:bg-green-600 text-white rounded text-xs flex items-center justify-center transition-colors active:scale-95"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
@@ -1022,6 +1214,8 @@ const CharacterSheet: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+
               </div>
             </div>
 
@@ -1034,15 +1228,15 @@ const CharacterSheet: React.FC = () => {
                 </h3>
               </div>
               
-              <div className="p-6">
-                <div className="grid grid-cols-1 gap-4">
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   {Object.entries(characterData.finalAttributes || {}).map(([key, value]) => {
                     const diceInfo = getDiceInfo(value);
                     
                     return (
                       <div 
                         key={key} 
-                        className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer hover:border-purple-300"
+                        className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-3 sm:p-4 border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-purple-300 hover:scale-[1.02] active:scale-[0.98]"
                         onClick={(e) => executeInlineRoll(`Teste de ${attributeNames[key]}`, 'attribute', value, undefined, undefined, e)}
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -1058,7 +1252,7 @@ const CharacterSheet: React.FC = () => {
                           </div>
                         </div>
                         
-                        <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center justify-between text-xs mb-2">
                           <span className={`px-2 py-1 rounded-full ${
                             diceInfo.type === 'vantagem' ? 'bg-green-100 text-green-700' :
                             diceInfo.type === 'desvantagem' ? 'bg-red-100 text-red-700' :
@@ -1070,6 +1264,31 @@ const CharacterSheet: React.FC = () => {
                           </span>
                           <span className="text-slate-600">
                             🎲 Clique para rolar
+                          </span>
+                        </div>
+                        
+                        {/* Alvos de Sucesso para Atributos */}
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex gap-3">
+                            {(() => {
+                              const targets = getSuccessTargets(value);
+                              return (
+                                <>
+                                  <span className="text-green-600">
+                                    Normal: {targets.normal ? `${targets.normal}+` : '—'}
+                                  </span>
+                                  <span className="text-blue-600">
+                                    Bom: {targets.good ? `${targets.good}+` : '—'}
+                                  </span>
+                                  <span className="text-purple-600">
+                                    Extremo: {targets.extreme ? `${targets.extreme}+` : '—'}
+                                  </span>
+                                </>
+                              );
+                            })()}
+                          </div>
+                          <span className="text-slate-600 text-xs">
+                            Valor: {value}
                           </span>
                         </div>
                       </div>
@@ -1092,8 +1311,8 @@ const CharacterSheet: React.FC = () => {
                 </h3>
               </div>
               
-              <div className="p-6">
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="p-4 sm:p-6">
+                <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
                   {Object.entries(characterData.finalSkillValues || {})
                     .filter(([_, value]) => value > 0)
                     .sort((a, b) => b[1] - a[1])
@@ -1102,7 +1321,7 @@ const CharacterSheet: React.FC = () => {
                       const targets = getSuccessTargets(value);
                       
                       return (
-                        <div key={skill} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200 hover:shadow-md transition-shadow cursor-pointer hover:border-indigo-300"
+                        <div key={skill} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-indigo-300 hover:scale-[1.01] active:scale-[0.99]"
                              onClick={(e) => {
                                const attributeKey = getAttributeForSkill(skill);
                                const attributeValue = characterData.finalAttributes?.[attributeKey] || 0;
@@ -1164,78 +1383,68 @@ const CharacterSheet: React.FC = () => {
           </div>
 
                 {!collapsedSections.abilities && (
-              <div className="p-6 space-y-4">
-                    {/* Habilidade de Nível 1 se existir */}
-                    {subclassData[characterData.subclass!]?.level1Ability && (
-                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border-2 border-indigo-200">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Star className="w-4 h-4 text-white" />
-                  </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h5 className="font-bold text-indigo-800">Sintonia Inicial</h5>
-                              <span className="text-xs bg-indigo-500 text-white px-2 py-1 rounded-full">Nv 1</span>
-                    </div>
-                            <div className="text-sm text-indigo-700 leading-relaxed">
-                              {subclassData[characterData.subclass!].level1Ability}
-                  </div>
-                </div>
-                  </div>
-                  </div>
-                )}
-                
-                    {/* Habilidades Selecionadas */}
-                    {characterData.selectedSubclassAbilities.map((ability, index) => {
-                      const isActive = isActiveAbility(ability);
-                      const description = getAbilityDescription(ability, characterData.subclass);
-                      
-                      return (
-                        <div 
-                          key={index} 
-                          className={`bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-4 border border-red-200 ${
-                            isActive ? 'cursor-pointer hover:shadow-lg hover:border-red-300 transition-all' : ''
-                          }`}
-                          onClick={isActive ? (e) => {
-                            // Para habilidades ativas, podemos implementar rolagens específicas
-                            const rollType = ability.includes('Toque') || ability.includes('Ataque') ? 'skill' : 'attribute';
-                            const attributeKey = characterData.keyAttribute || 'sabedoria';
-                            const attributeValue = characterData.finalAttributes?.[attributeKey] || 0;
-                            executeInlineRoll(`${ability}`, rollType, attributeValue, undefined, undefined, e);
-                          } : undefined}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                              {isActive ? <Dice6 className="w-4 h-4 text-white" /> : <Star className="w-4 h-4 text-white" />}
-                  </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <h5 className="font-bold text-red-800">{ability}</h5>
-                                <div className="flex gap-2">
-                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                    isActive ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
-                                  }`}>
-                                    {isActive ? '⚡ Ativa' : '🛡️ Passiva'}
-                                  </span>
-                                  <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full">
-                                    {characterData.subclass}
-                                  </span>
-              </div>
-            </div>
-                              <div className="text-sm text-red-700 leading-relaxed mb-2">
-                                {description}
-                </div>
-                              {isActive && (
-                                <div className="text-xs text-green-600 font-medium">
-                                  🎲 Clique para rolar teste da habilidade
+                  <div className="p-4 sm:p-6">
+                    <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
+                      {/* Habilidade de Nível 1 se existir */}
+                      {subclassData[characterData.subclass!]?.level1Ability && (
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 border border-indigo-200 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-slate-800">Sintonia Inicial</span>
+                              <span className="text-xs bg-indigo-500 text-white px-2 py-1 rounded-full font-medium">
+                                Nv 1
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-sm text-indigo-700 leading-relaxed">
+                            {subclassData[characterData.subclass!].level1Ability}
+                          </div>
                         </div>
-                              )}
-                      </div>
+                      )}
+                      
+                      {/* Habilidades Selecionadas */}
+                      {characterData.selectedSubclassAbilities.map((ability, index) => {
+                        const isActive = isActiveAbility(ability);
+                        const description = getAbilityDescription(ability, characterData.subclass);
+                        
+                        return (
+                          <div 
+                            key={index} 
+                            className={`bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-3 border border-red-200 hover:shadow-md transition-all duration-200 ${
+                              isActive ? 'cursor-pointer hover:border-red-300 hover:scale-[1.01] active:scale-[0.99]' : ''
+                            }`}
+                            onClick={isActive ? (e) => {
+                              const rollType = ability.includes('Toque') || ability.includes('Ataque') ? 'skill' : 'attribute';
+                              const attributeKey = characterData.keyAttribute || 'sabedoria';
+                              const attributeValue = characterData.finalAttributes?.[attributeKey] || 0;
+                              executeInlineRoll(`${ability}`, rollType, attributeValue, undefined, undefined, e);
+                            } : undefined}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-slate-800">{ability}</span>
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                  isActive ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
+                                }`}>
+                                  {isActive ? '⚡ Ativa' : '🛡️ Passiva'}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="text-sm text-red-700 leading-relaxed mb-2">
+                              {description}
+                            </div>
+                            
+                            {isActive && (
+                              <div className="text-xs text-green-600 font-medium">
+                                🎲 Clique para rolar teste da habilidade
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                      );
-                    })}
-                </div>
                 )}
               </div>
             )}
@@ -1260,50 +1469,65 @@ const CharacterSheet: React.FC = () => {
               </div>
               
               {!collapsedSections.equipment && (
-              <div className="p-6 space-y-4">
-                {/* Equipamento Básico */}
-                <div>
-                  <h5 className="font-medium text-slate-600 mb-3 flex items-center gap-2">
-                    <Package className="w-4 h-4" />
-                    Equipamento Básico:
-                  </h5>
-                  <div className="grid grid-cols-1 gap-2">
+                <div className="p-4 sm:p-6">
+                  <div className="space-y-2 sm:space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
+                    {/* Equipamento Básico */}
                     {initialFreeEquipment.map((item) => (
-                      <div key={item.id} className="flex items-center gap-2 text-sm text-slate-600 bg-gray-50 rounded p-2">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                        <span>{item.name}</span>
+                      <div key={item.id} className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-3 border border-gray-200 hover:shadow-md transition-all duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-slate-800">{item.name}</span>
+                            <span className="text-xs bg-emerald-500 text-white px-2 py-1 rounded-full font-medium">
+                              Básico
+                            </span>
+                          </div>
+                        </div>
+                        {item.description && (
+                          <div className="text-sm text-slate-600 leading-relaxed">
+                            {item.description}
+                          </div>
+                        )}
                       </div>
                     ))}
-                  </div>
-                </div>
 
-                {/* Equipamentos Comprados */}
-                {characterData.selectedEquipment && characterData.selectedEquipment.length > 0 && (
-                  <div>
-                    <h5 className="font-medium text-slate-600 mb-3 flex items-center gap-2">
-                      <Coins className="w-4 h-4" />
-                      Equipamentos Comprados:
-                    </h5>
-                    <div className="space-y-2">
-                      {characterData.selectedEquipment.map((equipId) => {
-                        const item = equipment[equipId];
-                        if (!item) return null;
-                        
-                        const getItemColor = () => {
-                          switch (item.category) {
-                            case 'weapon': return 'border-red-200 bg-red-50';
-                            case 'armor': return 'border-blue-200 bg-blue-50';
-                            default: return 'border-green-200 bg-green-50';
-                          }
-                        };
+                    {/* Equipamentos Comprados */}
+                    {characterData.selectedEquipment && characterData.selectedEquipment.length > 0 && (
+                      <>
+                        {characterData.selectedEquipment.map((equipId) => {
+                          const item = equipment[equipId];
+                          if (!item) return null;
+                          
+                          const getItemGradient = () => {
+                            switch (item.category) {
+                              case 'weapon': return 'from-red-50 to-pink-50';
+                              case 'armor': return 'from-blue-50 to-indigo-50';
+                              default: return 'from-green-50 to-emerald-50';
+                            }
+                          };
+                          
+                          const getItemBorder = () => {
+                            switch (item.category) {
+                              case 'weapon': return 'border-red-200';
+                              case 'armor': return 'border-blue-200';
+                              default: return 'border-green-200';
+                            }
+                          };
+                          
+                          const getCategoryBadge = () => {
+                            switch (item.category) {
+                              case 'weapon': return 'bg-red-500 text-white';
+                              case 'armor': return 'bg-blue-500 text-white';
+                              default: return 'bg-green-500 text-white';
+                            }
+                          };
                           
                           const isWeapon = item.category === 'weapon';
-                        
-                        return (
+                          
+                          return (
                             <div 
                               key={equipId} 
-                              className={`flex items-center justify-between p-3 rounded-lg border ${getItemColor()} ${
-                                isWeapon ? 'cursor-pointer hover:shadow-md transition-shadow hover:border-red-300' : ''
+                              className={`bg-gradient-to-r ${getItemGradient()} rounded-lg p-3 border ${getItemBorder()} hover:shadow-md transition-all duration-200 ${
+                                isWeapon ? 'cursor-pointer hover:border-red-300 hover:scale-[1.01] active:scale-[0.99]' : ''
                               }`}
                               onClick={isWeapon ? (e) => {
                                 if (item.damage) {
@@ -1311,58 +1535,81 @@ const CharacterSheet: React.FC = () => {
                                 }
                               } : undefined}
                             >
-                              <div className="flex flex-col">
-                            <span className="font-medium text-slate-700">{item.name}</span>
-                                {isWeapon && item.damage && (
-                                  <span className="text-xs text-red-600">
-                                    🎲 {item.damage} ({item.damageType}) • {isWeapon ? 'Clique para rolar dano' : ''}
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-slate-800">{item.name}</span>
+                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryBadge()}`}>
+                                    {item.category === 'weapon' ? '⚔️ Arma' : 
+                                     item.category === 'armor' ? '🛡️ Armadura' : 
+                                     '📦 Item'}
                                   </span>
-                                )}
+                                </div>
+                                <div className="text-sm font-bold text-slate-600">
+                                  {item.priceUnit === 'Ef' ? `${item.price} Ef` : `${item.price} EfP`}
+                                </div>
                               </div>
-                            <span className="text-xs text-slate-500 font-medium">
-                              {item.priceUnit === 'Ef' ? `${item.price} Ef` : `${item.price} EfP`}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                              
+                              {item.description && (
+                                <div className="text-sm text-slate-600 leading-relaxed mb-2">
+                                  {item.description}
+                                </div>
+                              )}
+                              
+                              {isWeapon && item.damage && (
+                                <div className="text-xs text-red-600 font-medium">
+                                  🎲 {item.damage} ({item.damageType}) • Clique para rolar dano
+                                </div>
+                              )}
+                              
+                              {item.category === 'armor' && (
+                                <div className="text-xs text-blue-600 font-medium">
+                                  🛡️ Redução: {item.damageReduction} • {item.armorType}
+                                  {item.attributePenalty && item.attributePenalty !== '0' && (
+                                    <span className="text-orange-600"> • Penalidade: {item.attributePenalty}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
                   </div>
-                )}
-
-                {/* Resumo Financeiro */}
-                {characterData.remainingGold !== undefined && (
-                  <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                        <Coins className="w-4 h-4 text-white" />
+                  
+                  {/* Resumo Financeiro */}
+                  {characterData.remainingGold !== undefined && (
+                    <div className="mt-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                          <Coins className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-yellow-800">Dinheiro Restante</div>
+                          <div className="text-xs text-yellow-600">Elfens (Ef) disponíveis</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-yellow-800">Dinheiro Restante</div>
-                        <div className="text-xs text-yellow-600">Elfens (Ef) disponíveis</div>
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {characterData.remainingGold.toFixed(1)} Ef
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {characterData.remainingGold.toFixed(1)} Ef
-                    </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Data de Criação */}
-                {characterData.createdAt && (
-                  <div className="pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Calendar className="w-3 h-3" />
-                      Herói criado em {new Date(characterData.createdAt).toLocaleDateString('pt-BR', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                  {/* Data de Criação */}
+                  {characterData.createdAt && (
+                    <div className="pt-4 border-t border-gray-200">
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <Calendar className="w-3 h-3" />
+                        Herói criado em {new Date(characterData.createdAt).toLocaleDateString('pt-BR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -1703,6 +1950,22 @@ const CharacterSheet: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Sistema de Comércio */}
+      {showShopSystem && (
+        <ShopSystem
+          isOpen={showShopSystem}
+          onClose={() => setShowShopSystem(false)}
+          currentMoney={characterState.currentMoney}
+          transactions={characterState.transactions}
+          inventory={characterState.inventory}
+          selectedEquipment={characterData.selectedEquipment || []}
+          onPurchase={handlePurchase}
+          onSell={handleSell}
+          onAddTransaction={addTransaction}
+          onAdjustMoney={adjustMoney}
+        />
       )}
 
       {/* Resultado de Rolagem Rápida */}

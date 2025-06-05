@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CharacterCreation } from '../../../types/character';
-import { CharacterState } from '../../../types/interactive';
+import { CharacterState, InventoryItem } from '../../../types/interactive';
 import { CharacterStorage } from '../../../utils/characterStorage';
 import { races } from '../../../data/races';
 import { deities } from '../../../data/deities';
@@ -160,6 +160,23 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
         createdAt: new Date().toISOString()
       };
 
+      // Converter equipamentos selecionados para inventário
+      const inventoryFromEquipments: InventoryItem[] = (finalizedData.selectedEquipment || []).map(equipId => {
+        const equipmentData = equipment[equipId];
+        if (!equipmentData) return null;
+        
+        return {
+          id: `starting-${equipId}-${Date.now()}`,
+          name: equipmentData.name,
+          equipmentId: equipId,
+          quantity: 1,
+          purchaseDate: new Date(),
+          purchasePrice: equipmentData.price,
+          source: 'starting' as const,
+          isEquipped: false
+        };
+      }).filter(Boolean) as InventoryItem[];
+
       // Estado inicial do personagem
       const initialState: CharacterState = {
         currentHP: stats.hitPoints,
@@ -168,7 +185,16 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
         tempHP: 0,
         conditions: [],
         rollHistory: [],
-        notes: []
+        notes: [],
+        // Sistema financeiro
+        currentMoney: finalizedData.remainingGold || 0,
+        transactions: [],
+        inventory: inventoryFromEquipments,
+        // Equipamentos equipados
+        equippedWeapon: undefined,
+        equippedArmor: undefined,
+        equippedShield: undefined,
+        equippedAccessories: []
       };
 
       // Salvar personagem

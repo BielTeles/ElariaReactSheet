@@ -340,6 +340,45 @@ export class CharacterStorage {
       needsUpdate = true;
     }
     
+    // Adicionar campos financeiros se não existirem (migração v1.2.0)
+    if (migratedState.currentMoney === undefined) {
+      migratedState.currentMoney = 0;
+      needsUpdate = true;
+    }
+    
+    if (!migratedState.transactions) {
+      migratedState.transactions = [];
+      needsUpdate = true;
+    }
+    
+    if (!migratedState.inventory) {
+      migratedState.inventory = [];
+      needsUpdate = true;
+    }
+    
+
+    
+    // Adicionar campos de equipamentos se não existirem
+    if (migratedState.equippedWeapon === undefined) {
+      migratedState.equippedWeapon = undefined;
+      needsUpdate = true;
+    }
+    
+    if (migratedState.equippedArmor === undefined) {
+      migratedState.equippedArmor = undefined;
+      needsUpdate = true;
+    }
+    
+    if (migratedState.equippedShield === undefined) {
+      migratedState.equippedShield = undefined;
+      needsUpdate = true;
+    }
+    
+    if (!migratedState.equippedAccessories) {
+      migratedState.equippedAccessories = [];
+      needsUpdate = true;
+    }
+    
     if (needsUpdate) {
       const updatedCharacter = {
         ...character,

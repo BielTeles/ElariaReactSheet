@@ -26,10 +26,21 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
 
   // Estado do formulário
-  const [noteForm, setNoteForm] = useState({
+  const [newNote, setNewNote] = useState<Partial<CharacterNote>>({
     title: '',
     content: '',
-    category: 'general' as CharacterNote['category'],
+    category: 'geral' as CharacterNote['category'],
+    tags: [],
+    isPrivate: false
+  });
+
+  const [editingNote, setEditingNote] = useState<CharacterNote | null>(null);
+  const [showPrivateNotes, setShowPrivateNotes] = useState(true);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    category: 'geral' as CharacterNote['category'],
     tags: '',
     isPrivate: false
   });
@@ -44,40 +55,40 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
   };
 
   const resetForm = () => {
-    setNoteForm({
+    setFormData({
       title: '',
       content: '',
-      category: 'general',
+      category: 'geral' as CharacterNote['category'],
       tags: '',
       isPrivate: false
     });
   };
 
   const handleSaveNote = () => {
-    if (!noteForm.title.trim() || !noteForm.content.trim()) return;
+    if (!formData.title.trim() || !formData.content.trim()) return;
 
-    const tagsArray = noteForm.tags
+    const tagsArray = formData.tags
       .split(',')
       .map(tag => tag.trim())
       .filter(tag => tag.length > 0);
 
     if (editingNoteId) {
       onUpdateNote(editingNoteId, {
-        title: noteForm.title.trim(),
-        content: noteForm.content.trim(),
-        category: noteForm.category,
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        category: formData.category,
         tags: tagsArray,
-        isPrivate: noteForm.isPrivate,
+        isPrivate: formData.isPrivate,
         updatedAt: new Date()
       });
       setEditingNoteId(null);
     } else {
       onAddNote({
-        title: noteForm.title.trim(),
-        content: noteForm.content.trim(),
-        category: noteForm.category,
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        category: formData.category,
         tags: tagsArray,
-        isPrivate: noteForm.isPrivate
+        isPrivate: formData.isPrivate
       });
       setIsAddingNote(false);
     }
@@ -86,7 +97,7 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
   };
 
   const handleEditNote = (note: CharacterNote) => {
-    setNoteForm({
+    setFormData({
       title: note.title,
       content: note.content,
       category: note.category,
@@ -218,8 +229,8 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
                 </label>
                 <input
                   type="text"
-                  value={noteForm.title}
-                  onChange={(e) => setNoteForm({...noteForm, title: e.target.value})}
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
                   placeholder="Título da nota..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
@@ -232,8 +243,8 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
                     Categoria
                   </label>
                   <select
-                    value={noteForm.category}
-                    onChange={(e) => setNoteForm({...noteForm, category: e.target.value as CharacterNote['category']})}
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value as CharacterNote['category']})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   >
                     {Object.entries(categoryConfig).map(([key, config]) => (
@@ -246,8 +257,8 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={noteForm.isPrivate}
-                      onChange={(e) => setNoteForm({...noteForm, isPrivate: e.target.checked})}
+                      checked={formData.isPrivate}
+                      onChange={(e) => setFormData({...formData, isPrivate: e.target.checked})}
                       className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                     />
                     <span className="text-sm text-gray-700">Nota Privada</span>
@@ -262,8 +273,8 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
                 </label>
                 <input
                   type="text"
-                  value={noteForm.tags}
-                  onChange={(e) => setNoteForm({...noteForm, tags: e.target.value})}
+                  value={formData.tags}
+                  onChange={(e) => setFormData({...formData, tags: e.target.value})}
                   placeholder="combate, importante, história..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
@@ -275,8 +286,8 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
                   Conteúdo *
                 </label>
                 <textarea
-                  value={noteForm.content}
-                  onChange={(e) => setNoteForm({...noteForm, content: e.target.value})}
+                  value={formData.content}
+                  onChange={(e) => setFormData({...formData, content: e.target.value})}
                   placeholder="Escreva o conteúdo da nota..."
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-vertical"
@@ -287,7 +298,7 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleSaveNote}
-                  disabled={!noteForm.title.trim() || !noteForm.content.trim()}
+                  disabled={!formData.title.trim() || !formData.content.trim()}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
                 >
                   <Save className="w-4 h-4" />
