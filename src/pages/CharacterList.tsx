@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CharacterStorage, SavedCharacter } from '../utils/characterStorage';
+import { classes } from '../data/classes';
+import { races } from '../data/races';
 import SaveSettings from '../components/SaveSettings';
 import SaveIndicator from '../components/SaveIndicator';
 import { 
@@ -121,6 +123,16 @@ const CharacterList: React.FC = () => {
       case 'elo': return <Zap className="w-4 h-4" />;
       default: return <Star className="w-4 h-4" />;
     }
+  };
+
+  const getClassName = (classId?: string) => {
+    if (!classId) return '';
+    return classes[classId]?.name || classId;
+  };
+
+  const getRaceName = (raceId?: string) => {
+    if (!raceId) return '';
+    return races[raceId]?.name || raceId;
   };
 
   const getResourceColor = (current: number, max: number) => {
@@ -402,7 +414,7 @@ const CharacterList: React.FC = () => {
                       <div>
                         <h3 className="font-bold text-lg">{character.name}</h3>
                         <p className="text-blue-100 text-sm">
-                          {character.data.race} • {character.data.mainClass}
+                          {getRaceName(character.data.race)} • {getClassName(character.data.mainClass)}
                         </p>
                       </div>
                     </div>

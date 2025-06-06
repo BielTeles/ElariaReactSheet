@@ -6,7 +6,7 @@ import { CharacterStorage } from '../../../utils/characterStorage';
 import { races } from '../../../data/races';
 import { deities } from '../../../data/deities';
 import { origins } from '../../../data/origins';
-import { classes } from '../../../data/classes';
+import { classes, subclassData } from '../../../data/classes';
 import { equipment, initialFreeEquipment } from '../../../data/equipment';
 import { Check, Plus, Coins, Package, Sword, Shield, Heart, Zap, Star, Save, Sparkles } from 'lucide-react';
 
@@ -127,6 +127,18 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
   };
 
   const finalStats = calculateFinalStats();
+
+  // Função utilitária para obter nome da subclasse
+  const getSubclassName = (subclassId?: string) => {
+    if (!subclassId) return '';
+    return subclassData[subclassId]?.name || subclassId;
+  };
+
+  // Função utilitária para obter nome da classe
+  const getClassName = (classId?: string) => {
+    if (!classId) return '';
+    return classes[classId]?.name || classId;
+  };
 
   // Função para finalizar o personagem
   const finalizeCharacter = async () => {
@@ -279,7 +291,7 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
                   {data.personalDetails?.name || 'Personagem sem nome'}
                 </h4>
                 <p className="text-slate-600 text-lg">
-                  {raceData?.name} • {data.mainClass} • {data.subclass}
+                  {raceData?.name} • {getClassName(data.mainClass)} • {getSubclassName(data.subclass)}
                 </p>
               </div>
             </div>
@@ -429,10 +441,10 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
                     <strong className="text-slate-700">Raça:</strong> {raceData?.name}
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <strong className="text-slate-700">Classe:</strong> {data.mainClass}
+                    <strong className="text-slate-700">Classe:</strong> {getClassName(data.mainClass)}
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <strong className="text-slate-700">Subclasse:</strong> {data.subclass}
+                    <strong className="text-slate-700">Subclasse:</strong> {getSubclassName(data.subclass)}
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <strong className="text-slate-700">Origem:</strong> {data.origin}

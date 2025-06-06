@@ -378,7 +378,8 @@ const CharacterSheet: React.FC = () => {
       itemId: inventoryItem.equipmentId
     });
 
-    // Diminuir quantidade ou remover item
+    // Independente da fonte (starting ou purchase), remover do inventory
+    // Porque os equipamentos iniciais foram migrados para o inventory
     if (inventoryItem.quantity > 1) {
       setCharacterState(prev => ({
         ...prev,
@@ -860,6 +861,11 @@ const CharacterSheet: React.FC = () => {
     }
   };
 
+  const getSubclassName = (subclassId?: string) => {
+    if (!subclassId) return '';
+    return subclassData[subclassId]?.name || subclassId;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900">
       {/* Header Épico - OTIMIZADO */}
@@ -901,7 +907,7 @@ const CharacterSheet: React.FC = () => {
                     </span>
                   <span className="flex items-center gap-1 sm:gap-2 bg-slate-700 px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm">
                     <Star className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="font-medium">{characterData.subclass}</span>
+                    <span className="font-medium">{getSubclassName(characterData.subclass)}</span>
                     </span>
                   </div>
                 
@@ -915,7 +921,7 @@ const CharacterSheet: React.FC = () => {
                   )}
                   {originData && (
                     <span className="text-slate-400">
-                      {originData.name.replace(/^.+?(?=\s)/, '')}
+                      {originData.name}
                     </span>
                   )}
                 </div>
@@ -1294,8 +1300,8 @@ const CharacterSheet: React.FC = () => {
                 </h3>
               </div>
               
-              <div className="p-3 sm:p-4">
-                <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
+              <div className="p-3">
+                <div className="space-y-1.5 max-h-80 sm:max-h-96 overflow-y-auto">
                   {Object.entries(characterData.finalSkillValues || {})
                     .filter(([_, value]) => value > 0)
                     .sort((a, b) => b[1] - a[1])
@@ -1304,7 +1310,7 @@ const CharacterSheet: React.FC = () => {
                       const targets = getSuccessTargets(value);
                       
                       return (
-                        <div key={skill} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-indigo-300 hover:scale-[1.01] active:scale-[0.99]"
+                        <div key={skill} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-indigo-300"
                              onClick={(e) => {
                                const attributeKey = getAttributeForSkill(skill);
                                const attributeValue = characterData.finalAttributes?.[attributeKey] || 0;
@@ -1312,14 +1318,14 @@ const CharacterSheet: React.FC = () => {
                              }}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-800 text-sm">{skill}</span>
+                              <span className="font-medium text-slate-800 text-xs">{skill}</span>
                               {isTrainedSkill && (
                                 <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">
                                   ✓
                                 </span>
                               )}
                             </div>
-                            <div className="text-lg font-bold text-blue-600">{value}</div>
+                            <div className="text-sm font-bold text-blue-600">{value}</div>
                           </div>
                         </div>
                       );
@@ -1351,20 +1357,20 @@ const CharacterSheet: React.FC = () => {
                 </div>
 
                 {!collapsedSections.abilities && (
-                  <div className="p-4">
-                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                  <div className="p-3">
+                    <div className="space-y-1.5 max-h-80 overflow-y-auto">
                       {/* Habilidade de Nível 1 se existir */}
                       {subclassData[characterData.subclass!]?.level1Ability && (
-                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 border border-indigo-200 hover:shadow-md transition-all duration-200">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-800">Sintonia Inicial</span>
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-2 border border-indigo-200 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-center justify-between mb-1">
+                                                          <div className="flex items-center gap-2">
+                                <span className="font-medium text-slate-800 text-xs">Sintonia Inicial</span>
                               <span className="text-xs bg-indigo-500 text-white px-2 py-1 rounded-full">
                                 Nv 1
                               </span>
                             </div>
                           </div>
-                          <div className="text-sm text-indigo-700 leading-relaxed">
+                          <div className="text-xs text-indigo-700 leading-snug">
                             {subclassData[characterData.subclass!].level1Ability}
                           </div>
                         </div>
@@ -1378,8 +1384,8 @@ const CharacterSheet: React.FC = () => {
                         return (
                           <div 
                             key={index} 
-                            className={`bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-3 border border-red-200 hover:shadow-md transition-all duration-200 ${
-                              isActive ? 'cursor-pointer hover:border-red-300 hover:scale-[1.01] active:scale-[0.99]' : ''
+                            className={`bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-2 border border-red-200 hover:shadow-md transition-all duration-200 ${
+                              isActive ? 'cursor-pointer hover:border-red-300' : ''
                             }`}
                             onClick={isActive ? (e) => {
                               const rollType = ability.includes('Toque') || ability.includes('Ataque') ? 'skill' : 'attribute';
@@ -1388,9 +1394,9 @@ const CharacterSheet: React.FC = () => {
                               executeInlineRoll(`${ability}`, rollType, attributeValue, undefined, undefined, e);
                             } : undefined}
                           >
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-medium text-slate-800 text-sm">{ability}</span>
+                                <span className="font-medium text-slate-800 text-xs">{ability}</span>
                                 <span className={`text-xs px-2 py-1 rounded-full ${
                                   isActive ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
                                 }`}>
@@ -1398,7 +1404,7 @@ const CharacterSheet: React.FC = () => {
                                 </span>
                               </div>
                             </div>
-                            <div className="text-sm text-red-700 leading-relaxed">
+                            <div className="text-xs text-red-700 leading-snug">
                               {description}
                             </div>
                           </div>
@@ -1430,31 +1436,38 @@ const CharacterSheet: React.FC = () => {
               </div>
               
               {!collapsedSections.equipment && (
-                <div className="p-4">
-                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                <div className="p-3">
+                  <div className="space-y-1.5 max-h-80 overflow-y-auto">
                 {/* Equipamento Básico */}
                     {initialFreeEquipment.map((item) => (
-                      <div key={item.id} className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-3 border border-gray-200 hover:shadow-md transition-all duration-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-slate-800">{item.name}</span>
+                      <div key={item.id} className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-2 border border-gray-200 hover:shadow-md transition-all duration-200">
+                        <div className="flex items-center justify-between mb-1">
+                                                      <div className="flex items-center gap-2">
+                              <span className="font-medium text-slate-800 text-xs">{item.name}</span>
                             <span className="text-xs bg-emerald-500 text-white px-2 py-1 rounded-full font-medium">
                               Básico
                             </span>
                       </div>
                   </div>
                         {item.description && (
-                          <div className="text-sm text-slate-600 leading-relaxed">
+                          <div className="text-xs text-slate-600 leading-snug">
                             {item.description}
-                </div>
+                          </div>
                         )}
                       </div>
                     ))}
 
-                {/* Equipamentos Comprados */}
+                {/* Equipamentos da Criação */}
                 {characterData.selectedEquipment && characterData.selectedEquipment.length > 0 && (
                       <>
-                      {characterData.selectedEquipment.map((equipId) => {
+                      {characterData.selectedEquipment
+                        .filter(equipId => {
+                          // Não mostrar equipamento se já existe no inventário como 'starting'
+                          return !characterState.inventory?.some(invItem => 
+                            invItem.equipmentId === equipId && invItem.source === 'starting'
+                          );
+                        })
+                        .map((equipId) => {
                         const item = equipment[equipId];
                         if (!item) return null;
                         
@@ -1487,8 +1500,8 @@ const CharacterSheet: React.FC = () => {
                         return (
                             <div 
                               key={equipId} 
-                              className={`bg-gradient-to-r ${getItemGradient()} rounded-lg p-3 border ${getItemBorder()} hover:shadow-md transition-all duration-200 ${
-                                isWeapon ? 'cursor-pointer hover:border-red-300 hover:scale-[1.01] active:scale-[0.99]' : ''
+                              className={`bg-gradient-to-r ${getItemGradient()} rounded-lg p-2 border ${getItemBorder()} hover:shadow-md transition-all duration-200 ${
+                                isWeapon ? 'cursor-pointer hover:border-red-300' : ''
                               }`}
                               onClick={isWeapon ? (e) => {
                                 if (item.damage) {
@@ -1496,14 +1509,17 @@ const CharacterSheet: React.FC = () => {
                                 }
                               } : undefined}
                             >
-                              <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium text-slate-800">{item.name}</span>
+                                  <span className="font-medium text-slate-800 text-xs">{item.name}</span>
                                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryBadge()}`}>
                                     {item.category === 'weapon' ? '⚔️ Arma' : 
                                      item.category === 'armor' ? '🛡️ Armadura' : 
                                      '📦 Item'}
-                            </span>
+                                  </span>
+                                  <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded-full font-medium">
+                                    Inicial
+                                  </span>
                           </div>
                                 <div className="text-sm font-bold text-slate-600">
                                   {item.priceUnit === 'Ef' ? `${item.price} Ef` : `${item.price} EfP`}
@@ -1511,10 +1527,10 @@ const CharacterSheet: React.FC = () => {
                               </div>
                               
                               {item.description && (
-                                <div className="text-sm text-slate-600 leading-relaxed mb-2">
+                                <div className="text-xs text-slate-600 leading-snug mb-1">
                                   {item.description}
-                  </div>
-                )}
+                                </div>
+                              )}
                               
                               {isWeapon && item.damage && (
                                 <div className="text-xs text-red-600 font-medium">
@@ -1535,6 +1551,99 @@ const CharacterSheet: React.FC = () => {
                         })}
                       </>
                     )}
+
+                {/* Inventário da Loja */}
+                {characterState.inventory && characterState.inventory.length > 0 && (
+                  <>
+                    {characterState.inventory.map((inventoryItem) => {
+                      const item = equipment[inventoryItem.equipmentId];
+                      if (!item) return null;
+                      
+                      const getItemGradient = () => {
+                        switch (item.category) {
+                          case 'weapon': return 'from-red-50 to-pink-50';
+                          case 'armor': return 'from-blue-50 to-indigo-50';
+                          default: return 'from-green-50 to-emerald-50';
+                        }
+                      };
+                      
+                      const getItemBorder = () => {
+                        switch (item.category) {
+                          case 'weapon': return 'border-red-200';
+                          case 'armor': return 'border-blue-200';
+                          default: return 'border-green-200';
+                        }
+                      };
+                      
+                      const getCategoryBadge = () => {
+                        switch (item.category) {
+                          case 'weapon': return 'bg-red-500 text-white';
+                          case 'armor': return 'bg-blue-500 text-white';
+                          default: return 'bg-green-500 text-white';
+                        }
+                      };
+                      
+                      const isWeapon = item.category === 'weapon';
+                    
+                      return (
+                        <div 
+                          key={inventoryItem.id} 
+                          className={`bg-gradient-to-r ${getItemGradient()} rounded-lg p-2 border ${getItemBorder()} hover:shadow-md transition-all duration-200 ${
+                            isWeapon ? 'cursor-pointer hover:border-red-300' : ''
+                          }`}
+                          onClick={isWeapon ? (e) => {
+                            if (item.damage) {
+                              executeInlineRoll(`Dano: ${item.name}`, 'damage', undefined, undefined, item.damage, e);
+                            }
+                          } : undefined}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-slate-800 text-xs">{item.name}</span>
+                              {inventoryItem.quantity > 1 && (
+                                <span className="text-xs bg-purple-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+                                  {inventoryItem.quantity}x
+                                </span>
+                              )}
+                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryBadge()}`}>
+                                {item.category === 'weapon' ? '⚔️ Arma' : 
+                                 item.category === 'armor' ? '🛡️ Armadura' : 
+                                 '📦 Item'}
+                              </span>
+                              <span className="text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-medium">
+                                Comprado
+                              </span>
+                            </div>
+                            <div className="text-sm font-bold text-slate-600">
+                              {item.priceUnit === 'Ef' ? `${item.price} Ef` : `${item.price} EfP`}
+                            </div>
+                          </div>
+                          
+                          {item.description && (
+                            <div className="text-xs text-slate-600 leading-snug mb-1">
+                              {item.description}
+                            </div>
+                          )}
+                          
+                          {isWeapon && item.damage && (
+                            <div className="text-xs text-red-600 font-medium">
+                              🎲 {item.damage} ({item.damageType}) • Clique para rolar dano
+                            </div>
+                          )}
+                          
+                          {item.category === 'armor' && (
+                            <div className="text-xs text-blue-600 font-medium">
+                              🛡️ Redução: {item.damageReduction} • {item.armorType}
+                              {item.attributePenalty && item.attributePenalty !== '0' && (
+                                <span className="text-orange-600"> • Penalidade: {item.attributePenalty}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
                   </div>
 
                 {/* Resumo Financeiro */}
@@ -1619,7 +1728,7 @@ const CharacterSheet: React.FC = () => {
                             <Mountain className="w-3 h-3" />
                             ORIGEM
                           </div>
-                          <div className="font-bold text-indigo-800">{originData?.name?.replace(/^.+?(?=\s)/, '') || characterData.origin}</div>
+                          <div className="font-bold text-indigo-800">{originData?.name || characterData.origin}</div>
                           <div className="text-xs text-indigo-600 mt-1">
                             {originData?.benefit.name}
                           </div>
@@ -1637,7 +1746,7 @@ const CharacterSheet: React.FC = () => {
                           </div>
                           <div className="font-bold text-purple-800">{classData?.name}</div>
                           <div className="text-xs text-purple-600 mt-1">
-                            {characterData.subclass}
+                            {getSubclassName(characterData.subclass)}
                           </div>
                         </div>
                         <div>
@@ -1921,7 +2030,7 @@ const CharacterSheet: React.FC = () => {
           currentMoney={characterState.currentMoney}
           transactions={characterState.transactions}
           inventory={characterState.inventory}
-          selectedEquipment={characterData.selectedEquipment || []}
+          selectedEquipment={savedCharacter?.data.selectedEquipment || characterData.selectedEquipment || []}
           onPurchase={handlePurchase}
           onSell={handleSell}
           onAddTransaction={addTransaction}

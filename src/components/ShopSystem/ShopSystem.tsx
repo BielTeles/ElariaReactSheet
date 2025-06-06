@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ShoppingCart, X, Coins, Package, Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { ShopItem, InventoryItem, Transaction } from '../../types/interactive';
 import { shopItems, shopCategories } from '../../data/shop';
+import { equipment } from '../../data/equipment';
 
 interface ShopSystemProps {
   isOpen: boolean;
@@ -67,6 +68,37 @@ const ShopSystem: React.FC<ShopSystemProps> = ({
     
     return inventoryQty + selectedQty;
   };
+
+  // Criar inventário combinado com equipamentos iniciais
+  const combinedInventory = useMemo(() => {
+    const combined: InventoryItem[] = [...inventory];
+    
+    // Adicionar equipamentos iniciais que não estão no inventário
+    selectedEquipment.forEach(equipId => {
+      const equipmentData = equipment[equipId];
+      if (!equipmentData) return;
+      
+      // Verificar se já existe no inventário
+      const existsInInventory = inventory.some(item => item.equipmentId === equipId);
+      if (existsInInventory) return;
+      
+      // Criar item temporário para venda
+      const startingEquipmentItem: InventoryItem = {
+        id: `starting-${equipId}`,
+        name: equipmentData.name,
+        equipmentId: equipId,
+        quantity: 1,
+        purchaseDate: new Date(), // Data fictícia para equipamentos iniciais
+        purchasePrice: equipmentData.price,
+        source: 'starting',
+        isEquipped: false
+      };
+      
+      combined.push(startingEquipmentItem);
+    });
+    
+    return combined;
+  }, [inventory, selectedEquipment]);
 
   // Vender item com 50% do valor (metade do preço)
   const sellItem = (inventoryItem: InventoryItem) => {
@@ -267,15 +299,15 @@ const ShopSystem: React.FC<ShopSystemProps> = ({
                 </div>
               </div>
               
-              {inventory.length === 0 ? (
+              {combinedInventory.length === 0 ? (
                 <div className="text-center py-12">
                   <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-500 mb-2">Inventário vazio</h3>
-                  <p className="text-gray-400">Compre alguns itens na loja!</p>
+                  <p className="text-gray-400">Compre alguns itens na loja ou use equipamentos iniciais!</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {inventory.map(item => {
+                  {combinedInventory.map(item => {
                     const sellPrice = Math.floor(item.purchasePrice * 0.5);
                     const totalValue = item.purchasePrice * item.quantity;
                     const totalSellValue = sellPrice * item.quantity;
@@ -284,7 +316,14 @@ const ShopSystem: React.FC<ShopSystemProps> = ({
                       <div key={item.id} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-all duration-200 hover:border-emerald-300">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
-                            <h4 className="font-semibold text-gray-800 mb-1">{item.name}</h4>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-gray-800">{item.name}</h4>
+                              {item.source === 'starting' && (
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                                  Inicial
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-3 text-sm text-gray-600">
                               <span className="flex items-center gap-1">
                                 <Package className="w-3 h-3" />
@@ -314,8 +353,13 @@ const ShopSystem: React.FC<ShopSystemProps> = ({
                             <span className="font-medium text-orange-600">{totalSellValue} Ef</span>
                           </div>
                           <div className="flex justify-between text-xs text-gray-500">
-                            <span>Comprado em:</span>
-                            <span>{new Date(item.purchaseDate).toLocaleDateString('pt-BR')}</span>
+                            <span>{item.source === 'starting' ? 'Equipamento inicial:' : 'Comprado em:'}</span>
+                            <span>
+                              {item.source === 'starting' 
+                                ? 'Criação do personagem' 
+                                : new Date(item.purchaseDate).toLocaleDateString('pt-BR')
+                              }
+                            </span>
                           </div>
                         </div>
                         

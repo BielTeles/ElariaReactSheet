@@ -61,6 +61,20 @@ module.exports = {
           800: '#330058',
           900: '#2b004a',
         },
+        // Sistema de cores com melhor contraste
+        texto: {
+          primary: '#0f172a',     // slate-900 mais escuro
+          secondary: '#334155',   // slate-700 mais escuro
+          muted: '#475569',      // slate-600 mais escuro
+          light: '#f8fafc',      // para fundos escuros
+          contrast: '#ffffff',    // branco puro para máximo contraste
+        },
+        fundo: {
+          primary: '#ffffff',     // branco puro
+          secondary: '#f8fafc',   // slate-50
+          tertiary: '#f1f5f9',   // slate-100
+          card: '#ffffff',        // branco para cards
+        },
       },
       fontFamily: {
         'fantasy': ['Cinzel', 'serif'],
