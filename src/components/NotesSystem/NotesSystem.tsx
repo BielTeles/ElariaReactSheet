@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   FileText, Plus, Edit3, Trash2, Save, X, Search, 
-  Tag, Calendar, User, Sword, MapPin, BookOpen,
+  Tag, Calendar, User, Sword, BookOpen,
   Filter, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { CharacterNote } from '../../types/interactive';
@@ -26,16 +26,6 @@ const NotesSystem: React.FC<NotesSystemProps> = ({
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
 
   // Estado do formulário
-  const [newNote, setNewNote] = useState<Partial<CharacterNote>>({
-    title: '',
-    content: '',
-    category: 'geral' as CharacterNote['category'],
-    tags: [],
-    isPrivate: false
-  });
-
-  const [editingNote, setEditingNote] = useState<CharacterNote | null>(null);
-  const [showPrivateNotes, setShowPrivateNotes] = useState(true);
 
   const [formData, setFormData] = useState({
     title: '',

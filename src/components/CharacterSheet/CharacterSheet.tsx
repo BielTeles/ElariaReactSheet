@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   User, Heart, Zap, Shield, Sword, Star, ArrowLeft, 
   Edit3, Save, FileText, Package, Coins, Users,
-  Calendar, Dice6, Eye, Brain, Target, Flame,
+  Calendar, Dice6, Eye, Target, Flame,
   Crown, Mountain, Feather, Sparkles, Sun,
   Plus, Minus, ChevronDown, ChevronUp,
   BookOpen, ShoppingCart
@@ -12,11 +12,12 @@ import { races } from '../../data/races';
 import { classes, subclassData } from '../../data/classes';
 import { origins } from '../../data/origins';
 import { deities } from '../../data/deities';
+import ExpandedSkillSystem from '../SkillSystem/ExpandedSkillSystem';
 import { equipment, initialFreeEquipment } from '../../data/equipment';
 import DiceRoller from '../DiceRoller/DiceRoller';
 import NotesSystem from '../NotesSystem/NotesSystem';
 import ShopSystem from '../ShopSystem/ShopSystem';
-import { CombatManager } from '../CombatSystem';
+
 import { DiceRoll, CharacterState, CharacterNote, Transaction, InventoryItem, ShopItem } from '../../types/interactive';
 import { CharacterStorage, SavedCharacter } from '../../utils/characterStorage';
 import { Character } from '../../types/character';
@@ -57,7 +58,12 @@ const CharacterSheet: React.FC = () => {
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [showNotesSystem, setShowNotesSystem] = useState(false);
   const [showShopSystem, setShowShopSystem] = useState(false);
-  const [showCombatSystem, setShowCombatSystem] = useState(false);
+
+  // Estados para os popups do header
+  const [showIdentityPopup, setShowIdentityPopup] = useState(false);
+  const [showRacialPopup, setShowRacialPopup] = useState(false);
+  const [showDeityPopup, setShowDeityPopup] = useState(false);
+
   
   // ID do personagem salvo (se aplicável)
   const characterId = location.state?.characterId;
@@ -909,6 +915,33 @@ const CharacterSheet: React.FC = () => {
                     <Star className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="font-medium">{getSubclassName(characterData.subclass)}</span>
                     </span>
+                  
+                  {/* Botões de Popup */}
+                  <button
+                    onClick={() => setShowIdentityPopup(true)}
+                    className="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg text-xs font-medium"
+                  >
+                    <User className="w-3 h-3" />
+                    <span className="hidden sm:inline">Identidade</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowRacialPopup(true)}
+                    className="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg text-xs font-medium"
+                  >
+                    <Users className="w-3 h-3" />
+                    <span className="hidden sm:inline">Herança</span>
+                  </button>
+                  
+                  {deityData && (
+                    <button
+                      onClick={() => setShowDeityPopup(true)}
+                      className="flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 shadow-lg text-xs font-medium"
+                    >
+                      <Sun className="w-3 h-3" />
+                      <span className="hidden sm:inline">Bênção</span>
+                    </button>
+                  )}
                   </div>
                 
                 {/* Essências e Patrono */}
@@ -1001,17 +1034,7 @@ const CharacterSheet: React.FC = () => {
               </button>
                 </div>
 
-                {/* Grupo: Combate */}
-                <div className="flex gap-1 bg-black/20 rounded-lg p-1">
-                  <button
-                    onClick={() => setShowCombatSystem(true)}
-                    className="flex items-center gap-1.5 px-2 py-1.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-md hover:from-red-600 hover:to-rose-700 transition-all duration-200 shadow-lg text-xs font-medium"
-                    title="Sistema de Combate"
-                  >
-                    <Sword className="w-3 h-3" />
-                    <span className="hidden sm:inline">Combate</span>
-                  </button>
-                </div>
+
               </div>
             </div>
           </div>
@@ -1104,10 +1127,10 @@ const CharacterSheet: React.FC = () => {
 
       {/* Conteúdo Principal */}
       <div className="w-full py-4">
-        <div className="grid xl:grid-cols-16 lg:grid-cols-12 md:grid-cols-8 gap-4 sm:gap-5 lg:gap-6 px-4">
+        <div className="grid xl:grid-cols-12 lg:grid-cols-12 md:grid-cols-12 gap-4 sm:gap-5 lg:gap-6 px-4">
           
-          {/* Coluna 1: Combate e Atributos (4 colunas no XL, 3 no LG, 2 no MD) */}
-          <div className="xl:col-span-4 lg:col-span-3 md:col-span-2 space-y-4">
+          {/* Coluna 1: Combate + Atributos (4 colunas) */}
+          <div className="xl:col-span-4 lg:col-span-4 md:col-span-4 space-y-4">
             
             {/* Estatísticas de Combate */}
             <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
@@ -1289,54 +1312,21 @@ const CharacterSheet: React.FC = () => {
             </div>
           </div>
 
-          {/* Coluna 2: Perícias (4 colunas no XL, 3 no LG, 2 no MD) */}
-          <div className="xl:col-span-4 lg:col-span-3 md:col-span-2 space-y-4">
-            {/* Perícias */}
-            <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-indigo-500 to-purple-500 p-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Brain className="w-5 h-5" />
-                  Perícias & Testes
-                </h3>
-              </div>
-              
-              <div className="p-3">
-                <div className="space-y-1.5 max-h-80 sm:max-h-96 overflow-y-auto">
-                  {Object.entries(characterData.finalSkillValues || {})
-                    .filter(([_, value]) => value > 0)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([skill, value]) => {
-                      const isTrainedSkill = getTrainedSkills().includes(skill);
-                      const targets = getSuccessTargets(value);
-                      
-                      return (
-                        <div key={skill} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-indigo-300"
-                             onClick={(e) => {
-                               const attributeKey = getAttributeForSkill(skill);
-                               const attributeValue = characterData.finalAttributes?.[attributeKey] || 0;
-                               executeInlineRoll(`Teste de ${skill}`, 'skill', attributeValue, value, undefined, e);
-                             }}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-800 text-xs">{skill}</span>
-                              {isTrainedSkill && (
-                                <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">
-                                  ✓
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-sm font-bold text-blue-600">{value}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
+          {/* Coluna 2: Perícias (4 colunas) */}
+          <div className="xl:col-span-4 lg:col-span-4 md:col-span-4 space-y-4">
+            {/* Sistema de Perícias */}
+            <ExpandedSkillSystem
+              characterData={characterData}
+              executeInlineRoll={executeInlineRoll}
+              getAttributeForSkill={getAttributeForSkill}
+              getTrainedSkills={getTrainedSkills}
+              getSuccessTargets={getSuccessTargets}
+            />
           </div>
 
-          {/* Coluna 3: Habilidades de Subclasse */}
-          <div className="xl:col-span-4 lg:col-span-3 md:col-span-2 space-y-4">
+          {/* Coluna 3: Habilidades + Equipamentos (4 colunas) */}
+          <div className="xl:col-span-4 lg:col-span-4 md:col-span-4 space-y-4">
+            {/* Habilidades de Subclasse */}
             {characterData.selectedSubclassAbilities && characterData.selectedSubclassAbilities.length > 0 && (
               <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
                 <div 
@@ -1683,301 +1673,6 @@ const CharacterSheet: React.FC = () => {
               )}
             </div>
           </div>
-
-          {/* Coluna 4: Aspectos Narrativos e RPG (4 colunas no XL, 3 no LG, 2 no MD) */}
-          <div className="xl:col-span-4 lg:col-span-3 md:col-span-2 space-y-4">
-            
-            {/* Informações do Personagem - MELHORADA com Colapso */}
-            <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-slate-600 to-gray-600 p-4 cursor-pointer hover:from-slate-700 hover:to-gray-700 transition-colors"
-                onClick={() => toggleSection('identity')}
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    Identidade do Herói
-                  </h3>
-                  {collapsedSections.identity ? (
-                    <ChevronDown className="w-5 h-5 text-white" />
-                  ) : (
-                    <ChevronUp className="w-5 h-5 text-white" />
-                  )}
-        </div>
-      </div>
-
-              {!collapsedSections.identity && (
-                <div className="p-4 space-y-4">
-                  {/* Informações Básicas */}
-                  <div className="grid grid-cols-1 gap-4">
-                    {/* Linhagem e Origem */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-xs font-medium text-blue-600 mb-1 flex items-center gap-1">
-                            <Crown className="w-3 h-3" />
-                            LINHAGEM
-                          </div>
-                          <div className="font-bold text-blue-800">{raceData?.name}</div>
-                          <div className="text-xs text-blue-600 mt-1">
-                            Patrono: {raceData?.patron}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-indigo-600 mb-1 flex items-center gap-1">
-                            <Mountain className="w-3 h-3" />
-                            ORIGEM
-                          </div>
-                          <div className="font-bold text-indigo-800">{originData?.name || characterData.origin}</div>
-                          <div className="text-xs text-indigo-600 mt-1">
-                            {originData?.benefit.name}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Chamado e Divindade */}
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <div className="text-xs font-medium text-purple-600 mb-1 flex items-center gap-1">
-                            <Star className="w-3 h-3" />
-                            CHAMADO
-                          </div>
-                          <div className="font-bold text-purple-800">{classData?.name}</div>
-                          <div className="text-xs text-purple-600 mt-1">
-                            {getSubclassName(characterData.subclass)}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-pink-600 mb-1 flex items-center gap-1">
-                            <Sun className="w-3 h-3" />
-                            PATRONO DIVINO
-                          </div>
-                          <div className="font-bold text-pink-800 flex items-center gap-1">
-                            <span>{getDeityIcon(characterData.deity)}</span>
-                            {deityData?.name || 'Nenhum'}
-                          </div>
-                          {deityData && (
-                            <div className="text-xs text-pink-600 mt-1">
-                              {deityData.title}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Descrições Detalhadas */}
-                  {characterData.personalDetails?.appearance && (
-                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Eye className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-emerald-800 mb-2">Aparência Física</div>
-                          <div className="text-sm text-emerald-700 leading-relaxed">
-                            {characterData.personalDetails.appearance}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {characterData.personalDetails?.personality && (
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Heart className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-amber-800 mb-2">Personalidade & Caráter</div>
-                          <div className="text-sm text-amber-700 leading-relaxed">
-                            {characterData.personalDetails.personality}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {characterData.personalDetails?.background && (
-                    <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-200">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-violet-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-violet-800 mb-2">História & Antecedentes</div>
-                          <div className="text-sm text-violet-700 leading-relaxed">
-                            {characterData.personalDetails.background}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Origem Detalhada */}
-                  {originData && (
-                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-slate-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Mountain className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-slate-800 mb-2">Origem: {originData.name}</div>
-                          <div className="text-sm text-slate-700 leading-relaxed mb-3">
-                            {originData.description}
-                          </div>
-                          <div className="bg-slate-100 rounded-lg p-3">
-                            <div className="text-xs font-semibold text-slate-600 mb-1">
-                              💎 {originData.benefit.name}
-                            </div>
-                            <div className="text-xs text-slate-600">
-                              {originData.benefit.description}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Traços Raciais - MELHORADOS */}
-            {raceData && (
-              <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 cursor-pointer hover:from-emerald-600 hover:to-teal-600 transition-colors"
-                  onClick={() => toggleSection('racialTraits')}
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      Herança Racial - {raceData.name}
-                    </h3>
-                    {collapsedSections.racialTraits ? (
-                      <ChevronDown className="w-5 h-5 text-white" />
-                    ) : (
-                      <ChevronUp className="w-5 h-5 text-white" />
-                    )}
-                  </div>
-                </div>
-                
-                {!collapsedSections.racialTraits && (
-                  <div className="p-6 space-y-4">
-                    {/* Descrição da Raça */}
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Crown className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-green-800 mb-2">Linhagem dos {raceData.name}</div>
-                          <div className="text-sm text-green-700 leading-relaxed">
-                            {raceData.description}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Traços Raciais */}
-                    {raceData.traits.map((trait, index) => (
-                      <div key={index} className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
-                        <div className="flex items-start gap-3">
-                          <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Feather className="w-3 h-3 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-sm text-emerald-700 leading-relaxed">
-                              <strong className="text-emerald-800">
-                                {trait.split(':')[0]}:
-                              </strong>
-                              {trait.split(':')[1]}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Benefício do Patrono - MELHORADO */}
-            {deityData && (
-              <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 p-4 cursor-pointer hover:from-orange-600 hover:to-yellow-600 transition-colors"
-                  onClick={() => toggleSection('divineBlessing')}
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Sun className="w-5 h-5" />
-                      Bênção Divina
-                    </h3>
-                    {collapsedSections.divineBlessing ? (
-                      <ChevronDown className="w-5 h-5 text-white" />
-                    ) : (
-                      <ChevronUp className="w-5 h-5 text-white" />
-                    )}
-                  </div>
-                </div>
-                
-                {!collapsedSections.divineBlessing && (
-                  <div className="p-6">
-                    {/* Informações da Divindade */}
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 mb-4">
-                      <div className="flex items-start gap-3">
-                        <div className="text-4xl flex-shrink-0">{getDeityIcon(characterData.deity)}</div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h5 className="font-bold text-amber-800 text-lg">{deityData.name}</h5>
-                            <span className="text-sm text-amber-600 italic">{deityData.title}</span>
-                          </div>
-                          <div className="text-sm text-amber-700 leading-relaxed mb-3">
-                            {deityData.description}
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <div className="text-xs font-semibold text-amber-600 mb-1">Domínios:</div>
-                              <div className="text-xs text-amber-700">
-                                {deityData.domains.join(', ')}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="text-xs font-semibold text-amber-600 mb-1">Essências:</div>
-                              <div className="text-xs text-amber-700">
-                                {deityData.essences.join(', ')}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Benefício Divino */}
-                    <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl p-4 border-2 border-yellow-300">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Sparkles className="w-4 h-4 text-white" />
-                        </div>
-                        <div>
-                          <h5 className="font-bold text-yellow-800 mb-2 text-lg">
-                            ✨ {deityData.benefit.name}
-                          </h5>
-                          <div className="text-sm text-yellow-700 leading-relaxed">
-                            {deityData.benefit.description}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -2038,73 +1733,7 @@ const CharacterSheet: React.FC = () => {
         />
       )}
 
-      {/* Sistema de Combate */}
-      {showCombatSystem && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-7xl w-full max-h-[95vh] overflow-hidden">
-            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-500 to-rose-500">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Sword className="w-6 h-6 text-white" />
-                  <h3 className="text-xl font-bold text-white">
-                    Sistema de Combate - {characterData.personalDetails?.name}
-                  </h3>
-                </div>
-                <button 
-                  onClick={() => setShowCombatSystem(false)}
-                  className="text-white hover:text-gray-200 text-2xl font-bold p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            
-            <div className="overflow-auto max-h-[calc(95vh-80px)]">
-              <CombatManager
-                characters={savedCharacter ? [{
-                  id: savedCharacter.id,
-                  name: savedCharacter.data.personalDetails?.name || 'Personagem Sem Nome',
-                  age: 0,
-                  height: '',
-                  attributes: {
-                    forca: savedCharacter.data.finalAttributes?.forca || 0,
-                    destreza: savedCharacter.data.finalAttributes?.destreza || 0,
-                    constituicao: savedCharacter.data.finalAttributes?.constituicao || 0,
-                    inteligencia: savedCharacter.data.finalAttributes?.inteligencia || 0,
-                    sabedoria: savedCharacter.data.finalAttributes?.sabedoria || 0,
-                    carisma: savedCharacter.data.finalAttributes?.carisma || 0
-                  },
-                  race: (savedCharacter.data.race as any) || 'kain',
-                  mainClass: (savedCharacter.data.mainClass as any) || 'titã',
-                  subclass: (savedCharacter.data.subclass as any) || 'baluarte',
-                  origin: (savedCharacter.data.origin as any) || 'sobrevivente-brasas',
-                  deity: (savedCharacter.data.deity as any) || null,
-                  level: savedCharacter.data.level || 1,
-                  hitPoints: {
-                    current: characterState.currentHP,
-                    maximum: savedCharacter.data.hitPoints || 0
-                  },
-                  manaPoints: {
-                    current: characterState.currentMP,
-                    maximum: savedCharacter.data.manaPoints || 0
-                  },
-                  vigor: savedCharacter.data.vigorPoints ? {
-                    current: characterState.currentVigor,
-                    maximum: savedCharacter.data.vigorPoints
-                  } : undefined,
-                  skills: savedCharacter.data.finalSkillValues || {},
-                  abilities: savedCharacter.data.selectedSubclassAbilities || [],
-                  equipment: [],
-                  gold: characterState.currentMoney,
-                  createdAt: new Date(savedCharacter.data.createdAt || new Date()),
-                  updatedAt: new Date()
-                }] : []}
-                onClose={() => setShowCombatSystem(false)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Resultado de Rolagem Rápida */}
       {quickRollResult.show && quickRollResult.roll && (
@@ -2173,6 +1802,293 @@ const CharacterSheet: React.FC = () => {
                  'Fracasso Extremo!'}
               </span>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Popup de Identidade do Herói */}
+      {showIdentityPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                  <User className="w-6 h-6 text-blue-600" />
+                  Identidade do Herói
+                </h3>
+                <button 
+                  onClick={() => setShowIdentityPopup(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Informações Básicas */}
+              <div className="grid grid-cols-1 gap-4">
+                {/* Linhagem e Origem */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs font-medium text-blue-600 mb-1 flex items-center gap-1">
+                        <Crown className="w-3 h-3" />
+                        LINHAGEM
+                      </div>
+                      <div className="font-bold text-blue-800">{raceData?.name}</div>
+                      <div className="text-xs text-blue-600 mt-1">
+                        Patrono: {raceData?.patron}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-indigo-600 mb-1 flex items-center gap-1">
+                        <Mountain className="w-3 h-3" />
+                        ORIGEM
+                      </div>
+                      <div className="font-bold text-indigo-800">{originData?.name || characterData.origin}</div>
+                      <div className="text-xs text-indigo-600 mt-1">
+                        {originData?.benefit.name}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chamado e Divindade */}
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs font-medium text-purple-600 mb-1 flex items-center gap-1">
+                        <Star className="w-3 h-3" />
+                        CHAMADO
+                      </div>
+                      <div className="font-bold text-purple-800">{classData?.name}</div>
+                      <div className="text-xs text-purple-600 mt-1">
+                        {getSubclassName(characterData.subclass)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-medium text-pink-600 mb-1 flex items-center gap-1">
+                        <Sun className="w-3 h-3" />
+                        PATRONO DIVINO
+                      </div>
+                      <div className="font-bold text-pink-800 flex items-center gap-1">
+                        <span>{getDeityIcon(characterData.deity)}</span>
+                        {deityData?.name || 'Nenhum'}
+                      </div>
+                      {deityData && (
+                        <div className="text-xs text-pink-600 mt-1">
+                          {deityData.title}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Descrições Detalhadas */}
+              {characterData.personalDetails?.appearance && (
+                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Eye className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-emerald-800 mb-2">Aparência Física</div>
+                      <div className="text-sm text-emerald-700 leading-relaxed">
+                        {characterData.personalDetails.appearance}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {characterData.personalDetails?.personality && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Heart className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-amber-800 mb-2">Personalidade & Caráter</div>
+                      <div className="text-sm text-amber-700 leading-relaxed">
+                        {characterData.personalDetails.personality}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {characterData.personalDetails?.background && (
+                <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-200">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-violet-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-violet-800 mb-2">História & Antecedentes</div>
+                      <div className="text-sm text-violet-700 leading-relaxed">
+                        {characterData.personalDetails.background}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Origem Detalhada */}
+              {originData && (
+                <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-slate-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Mountain className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-800 mb-2">Origem: {originData.name}</div>
+                      <div className="text-sm text-slate-700 leading-relaxed mb-3">
+                        {originData.description}
+                      </div>
+                      <div className="bg-slate-100 rounded-lg p-3">
+                        <div className="text-xs font-semibold text-slate-600 mb-1">
+                          💎 {originData.benefit.name}
+                        </div>
+                        <div className="text-xs text-slate-600">
+                          {originData.benefit.description}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup de Herança Racial */}
+      {showRacialPopup && raceData && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                  <Users className="w-6 h-6 text-green-600" />
+                  Herança Racial - {raceData.name}
+                </h3>
+                <button 
+                  onClick={() => setShowRacialPopup(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {/* Descrição da Raça */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Crown className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-green-800 mb-2">Linhagem dos {raceData.name}</div>
+                    <div className="text-sm text-green-700 leading-relaxed">
+                      {raceData.description}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Traços Raciais */}
+              {raceData.traits.map((trait, index) => (
+                <div key={index} className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Feather className="w-3 h-3 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-emerald-700 leading-relaxed">
+                        <strong className="text-emerald-800">
+                          {trait.split(':')[0]}:
+                        </strong>
+                        {trait.split(':')[1]}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup de Bênção Divina */}
+      {showDeityPopup && deityData && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                  <Sun className="w-6 h-6 text-amber-600" />
+                  Bênção Divina
+                </h3>
+                <button 
+                  onClick={() => setShowDeityPopup(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {/* Informações da Divindade */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-4xl flex-shrink-0">{getDeityIcon(characterData.deity)}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h5 className="font-bold text-amber-800 text-lg">{deityData.name}</h5>
+                      <span className="text-sm text-amber-600 italic">{deityData.title}</span>
+                    </div>
+                    <div className="text-sm text-amber-700 leading-relaxed mb-3">
+                      {deityData.description}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs font-semibold text-amber-600 mb-1">Domínios:</div>
+                        <div className="text-xs text-amber-700">
+                          {deityData.domains.join(', ')}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-amber-600 mb-1">Essências:</div>
+                        <div className="text-xs text-amber-700">
+                          {deityData.essences.join(', ')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Benefício Divino */}
+              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl p-4 border-2 border-yellow-300">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-yellow-800 mb-2 text-lg">
+                      ✨ {deityData.benefit.name}
+                    </h5>
+                    <div className="text-sm text-yellow-700 leading-relaxed">
+                      {deityData.benefit.description}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

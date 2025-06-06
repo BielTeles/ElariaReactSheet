@@ -25,6 +25,15 @@ interface SelectValueProps {
   placeholder?: string;
 }
 
+// Context para compartilhar estado entre componentes
+const SelectContext = React.createContext<{
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  value: string;
+  onValueChange: (value: string) => void;
+  getDisplayText: () => string;
+} | null>(null);
+
 export const Select: React.FC<SelectProps> = ({ value, onValueChange, children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
@@ -40,42 +49,46 @@ export const Select: React.FC<SelectProps> = ({ value, onValueChange, children }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleValueChange = (newValue: string) => {
+    onValueChange(newValue);
+    setIsOpen(false);
+  };
+
+  // Função para encontrar o texto do item selecionado
+  const getDisplayText = (): string => {
+    // Por simplicidade, retornamos apenas o valor
+    // Em casos específicos, isso pode ser melhorado
+    return value;
+  };
+
   return (
-    <div ref={selectRef} className="relative">
-      {React.Children.map(children, child => {
-        if (React.isValidElement(child)) {
-          if (child.type === SelectTrigger) {
-            return React.cloneElement(child, {
-              onClick: () => setIsOpen(!isOpen),
-              isOpen
-            } as any);
-          }
-          if (child.type === SelectContent && isOpen) {
-            return React.cloneElement(child, {
-              onSelect: (selectedValue: string) => {
-                onValueChange(selectedValue);
-                setIsOpen(false);
-              },
-              currentValue: value
-            } as any);
-          }
-        }
-        return child;
-      })}
-    </div>
+    <SelectContext.Provider value={{ 
+      isOpen, 
+      setIsOpen, 
+      value, 
+      onValueChange: handleValueChange,
+      getDisplayText
+    }}>
+      <div ref={selectRef} className="relative">
+        {children}
+      </div>
+    </SelectContext.Provider>
   );
 };
 
-export const SelectTrigger: React.FC<SelectTriggerProps & { onClick?: () => void; isOpen?: boolean }> = ({ 
+export const SelectTrigger: React.FC<SelectTriggerProps> = ({ 
   children, 
-  className = '', 
-  onClick,
-  isOpen 
+  className = '' 
 }) => {
+  const context = React.useContext(SelectContext);
+  if (!context) throw new Error('SelectTrigger must be used within a Select');
+
+  const { isOpen, setIsOpen } = context;
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={() => setIsOpen(!isOpen)}
       className={`w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${className}`}
     >
       {children}
@@ -84,36 +97,35 @@ export const SelectTrigger: React.FC<SelectTriggerProps & { onClick?: () => void
   );
 };
 
-export const SelectContent: React.FC<SelectContentProps & { onSelect?: (value: string) => void; currentValue?: string }> = ({ 
-  children, 
-  onSelect,
-  currentValue 
-}) => {
+export const SelectContent: React.FC<SelectContentProps> = ({ children }) => {
+  const context = React.useContext(SelectContext);
+  if (!context) throw new Error('SelectContent must be used within a Select');
+
+  const { isOpen } = context;
+
+  if (!isOpen) return null;
+
   return (
     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-      {React.Children.map(children, child => {
-        if (React.isValidElement(child) && child.type === SelectItem) {
-          return React.cloneElement(child, {
-            onSelect,
-            isSelected: (child.props as any).value === currentValue
-          } as any);
-        }
-        return child;
-      })}
+      {children}
     </div>
   );
 };
 
-export const SelectItem: React.FC<SelectItemProps & { onSelect?: (value: string) => void; isSelected?: boolean }> = ({ 
+export const SelectItem: React.FC<SelectItemProps> = ({ 
   value, 
-  children, 
-  onSelect,
-  isSelected 
+  children
 }) => {
+  const context = React.useContext(SelectContext);
+  if (!context) throw new Error('SelectItem must be used within a Select');
+
+  const { value: selectedValue, onValueChange } = context;
+  const isSelected = value === selectedValue;
+
   return (
     <button
       type="button"
-      onClick={() => onSelect?.(value)}
+      onClick={() => onValueChange(value)}
       className={`w-full text-left px-3 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none ${
         isSelected ? 'bg-blue-50 text-blue-600' : ''
       }`}
@@ -124,5 +136,15 @@ export const SelectItem: React.FC<SelectItemProps & { onSelect?: (value: string)
 };
 
 export const SelectValue: React.FC<SelectValueProps> = ({ placeholder }) => {
+  const context = React.useContext(SelectContext);
+  if (!context) throw new Error('SelectValue must be used within a Select');
+
+  const { getDisplayText } = context;
+  const displayText = getDisplayText();
+
+  if (displayText) {
+    return <span>{displayText}</span>;
+  }
+
   return <span className="text-gray-500">{placeholder}</span>;
 }; 

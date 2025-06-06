@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  Dice6, RotateCcw, Clock, Target, TrendingUp, Plus, Minus, 
-  Swords, Shield, Zap, Settings, Calculator, Bookmark, 
+  Dice6, Clock, Target, TrendingUp, Plus, Minus, 
+  Swords, Zap, Settings, Calculator, Bookmark, 
   Volume2, VolumeX, Play, Save
 } from 'lucide-react';
 import { DiceRoll, CustomRoll, RollSettings } from '../../types/interactive';
@@ -271,27 +271,7 @@ const DiceRoller: React.FC<DiceRollerProps> = ({ isOpen, onClose, rollHistory, o
     }
   };
 
-  const getSuccessColor = (level: string) => {
-    switch (level) {
-      case 'success-extreme': return 'text-purple-600 bg-purple-100';
-      case 'success-good': return 'text-blue-600 bg-blue-100';
-      case 'success-normal': return 'text-green-600 bg-green-100';
-      case 'failure-normal': return 'text-orange-600 bg-orange-100';
-      case 'failure-extreme': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
 
-  const getSuccessText = (level: string) => {
-    switch (level) {
-      case 'success-extreme': return 'Sucesso Extremo!';
-      case 'success-good': return 'Sucesso Bom';
-      case 'success-normal': return 'Sucesso Normal';
-      case 'failure-normal': return 'Fracasso Normal';
-      case 'failure-extreme': return 'Fracasso Extremo!';
-      default: return 'Teste de Atributo';
-    }
-  };
 
   // Funções utilitárias
   const saveCustomRoll = () => {
