@@ -5,6 +5,7 @@ export interface EquipmentItem {
   subcategory?: string;
   price: number; // em Elfens
   priceUnit: 'Ef' | 'EfP';
+  weight?: number; // em kg - NOVO
   description?: string;
   
   // Para armas
@@ -20,7 +21,6 @@ export interface EquipmentItem {
   attributePenalty?: string;
   
   // Para itens gerais
-  weight?: string;
   uses?: string;
 }
 
@@ -33,6 +33,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'simple',
     price: 5,
     priceUnit: 'Ef',
+    weight: 0.5,
     damage: '1d4',
     keyAttribute: 'DES',
     damageType: 'Perf./Corte',
@@ -47,6 +48,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'simple',
     price: 5,
     priceUnit: 'Ef',
+    weight: 1.5,
     damage: '1d6',
     keyAttribute: 'FOR',
     damageType: 'Impacto',
@@ -61,6 +63,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'simple',
     price: 5,
     priceUnit: 'Ef',
+    weight: 1.0,
     damage: '1d6',
     keyAttribute: 'FOR',
     damageType: 'Perf.',
@@ -75,6 +78,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'simple',
     price: 5,
     priceUnit: 'Ef',
+    weight: 2.0,
     damage: '1d4',
     keyAttribute: 'DES',
     damageType: 'Perf.',
@@ -91,6 +95,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'martial',
     price: 5,
     priceUnit: 'Ef',
+    weight: 1.0,
     damage: '1d6',
     keyAttribute: 'DES',
     damageType: 'Corte',
@@ -105,6 +110,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'martial',
     price: 5,
     priceUnit: 'Ef',
+    weight: 1.5,
     damage: '1d6',
     keyAttribute: 'FOR',
     damageType: 'Corte',
@@ -119,6 +125,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'martial',
     price: 10,
     priceUnit: 'Ef',
+    weight: 3.0,
     damage: '1d8',
     keyAttribute: 'FOR',
     damageType: 'Corte',
@@ -133,6 +140,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'martial',
     price: 10,
     priceUnit: 'Ef',
+    weight: 4.0,
     damage: '1d8',
     keyAttribute: 'FOR',
     damageType: 'Corte',
@@ -147,6 +155,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'martial',
     price: 10,
     priceUnit: 'Ef',
+    weight: 1.5,
     damage: '1d6',
     keyAttribute: 'DES',
     damageType: 'Perf.',
@@ -163,6 +172,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'light',
     price: 5,
     priceUnit: 'Ef',
+    weight: 3.0,
     armorType: 'Leve',
     damageReduction: 1,
     attributePenalty: '0',
@@ -175,6 +185,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'light',
     price: 5,
     priceUnit: 'Ef',
+    weight: 4.0,
     armorType: 'Leve',
     damageReduction: 1,
     attributePenalty: '0',
@@ -187,6 +198,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'light',
     price: 5,
     priceUnit: 'Ef',
+    weight: 3.5,
     armorType: 'Leve',
     damageReduction: 1,
     attributePenalty: '0',
@@ -199,6 +211,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'medium',
     price: 50,
     priceUnit: 'Ef',
+    weight: 12.0,
     armorType: 'Média',
     damageReduction: 2,
     attributePenalty: '-1 (Força)',
@@ -211,6 +224,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'medium',
     price: 50,
     priceUnit: 'Ef',
+    weight: 15.0,
     armorType: 'Média',
     damageReduction: 2,
     attributePenalty: '-1 (Destreza)',
@@ -223,6 +237,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'heavy',
     price: 85,
     priceUnit: 'Ef',
+    weight: 25.0,
     armorType: 'Pesada',
     damageReduction: 3,
     attributePenalty: '-1 (Destreza e Força)',
@@ -237,6 +252,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'general',
     price: 3,
     priceUnit: 'Ef',
+    weight: 3.0,
     description: 'Corda resistente de cânhamo, essencial para escaladas e travessias.'
   },
   'tocha': {
@@ -246,6 +262,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'general',
     price: 2,
     priceUnit: 'EfP',
+    weight: 0.2,
     description: 'Iluminação portátil que dura algumas horas.'
   },
   'racao-viagem': {
@@ -255,6 +272,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'general',
     price: 5,
     priceUnit: 'EfP',
+    weight: 0.3,
     description: 'Alimento preservado que sustenta um aventureiro por um dia inteiro.'
   },
   'kit-cura': {
@@ -264,6 +282,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'general',
     price: 50,
     priceUnit: 'Ef',
+    weight: 2.0,
     description: 'Bandagens, ervas medicinais e unguentos para primeiros socorros.'
   },
   'saco-dormir': {
@@ -273,6 +292,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'general',
     price: 5,
     priceUnit: 'EfP',
+    weight: 1.0,
     description: 'Essencial para descansar confortavelmente em viagens.'
   },
   'mochila': {
@@ -282,6 +302,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'general',
     price: 3,
     priceUnit: 'Ef',
+    weight: 0.5,
     description: 'Para carregar todos os seus pertences de aventureiro.'
   },
   'cantil': {
@@ -291,6 +312,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'general',
     price: 1,
     priceUnit: 'Ef',
+    weight: 0.3,
     description: 'Recipiente para água, fundamental para sobrevivência.'
   },
   'pederneira': {
@@ -300,6 +322,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'general',
     price: 5,
     priceUnit: 'EfP',
+    weight: 0.1,
     description: 'Para acender fogueiras e tochas quando necessário.'
   },
   'historia-paz-dourada': {
@@ -309,6 +332,7 @@ export const equipment: Record<string, EquipmentItem> = {
     subcategory: 'general',
     price: 3,
     priceUnit: 'Ef',
+    weight: 0.5,
     description: 'Um livro sobre a história recente de Elaria, útil para conhecimento geral.'
   }
 };
@@ -324,6 +348,7 @@ export const initialFreeEquipment: EquipmentItem[] = [
     subcategory: 'clothing',
     price: 0,
     priceUnit: 'Ef',
+    weight: 1.0,
     description: 'Roupas simples e resistentes, adequadas para aventuras.'
   }
 ];

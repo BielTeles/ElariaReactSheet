@@ -96,5 +96,6 @@ export interface InventoryItem {
   purchasePrice: number;
   source: 'purchase' | 'loot' | 'gift' | 'starting';
   isEquipped: boolean;
+  equippedSlot?: string;
   notes?: string;
 } 

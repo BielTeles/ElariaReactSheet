@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  User, Heart, Zap, Shield, Sword, Star, ArrowLeft, 
-  Edit3, Save, FileText, Package, Coins, Users,
-  Calendar, Dice6, Eye, Target, Flame,
-  Crown, Mountain, Feather, Sparkles, Sun,
+  ArrowLeft, Edit3, Save, Target, Heart, Zap,
+  Sword, Shield, Package, Flame, Mountain, Eye, Star, 
+  Crown, Feather, Sparkles, Sun,
   Plus, Minus, ChevronDown, ChevronUp,
-  BookOpen, ShoppingCart
+  BookOpen, ShoppingCart, AlertTriangle,
+  Search, Filter, SortAsc, Swords,
+  User, Users, Dice6, FileText
 } from 'lucide-react';
 import { races } from '../../data/races';
 import { classes, subclassData } from '../../data/classes';
@@ -14,6 +15,7 @@ import { origins } from '../../data/origins';
 import { deities } from '../../data/deities';
 import ExpandedSkillSystem from '../SkillSystem/ExpandedSkillSystem';
 import { equipment, initialFreeEquipment } from '../../data/equipment';
+import { subclassAbilities } from '../../data/abilities';
 import DiceRoller from '../DiceRoller/DiceRoller';
 import NotesSystem from '../NotesSystem/NotesSystem';
 import ShopSystem from '../ShopSystem/ShopSystem';
@@ -53,17 +55,22 @@ interface CharacterData {
 const CharacterSheet: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Estados para controle da interface
   const [isEditing, setIsEditing] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [showSuccessTable, setShowSuccessTable] = useState(false);
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [showNotesSystem, setShowNotesSystem] = useState(false);
   const [showShopSystem, setShowShopSystem] = useState(false);
-
-  // Estados para os popups do header
   const [showIdentityPopup, setShowIdentityPopup] = useState(false);
   const [showRacialPopup, setShowRacialPopup] = useState(false);
   const [showDeityPopup, setShowDeityPopup] = useState(false);
 
+  // Estados para sistema de inventário avançado
+  const [inventorySearchTerm, setInventorySearchTerm] = useState('');
+  const [inventoryFilter, setInventoryFilter] = useState<'all' | 'weapons' | 'armor' | 'items' | 'equipped'>('all');
+  const [inventorySortBy, setInventorySortBy] = useState<'name' | 'weight' | 'value' | 'category'>('name');
   
   // ID do personagem salvo (se aplicável)
   const characterId = location.state?.characterId;
@@ -101,15 +108,6 @@ const CharacterSheet: React.FC = () => {
     show: false,
     roll: null,
     position: { x: 0, y: 0 }
-  });
-
-  // Estados para colapsar seções
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
-    identity: false,
-    abilities: false,
-    racialTraits: false,
-    divineBlessing: false,
-    equipment: false
   });
 
   // Função para alternar colapso de seção
@@ -221,6 +219,14 @@ const CharacterSheet: React.FC = () => {
       }));
     }
   }, [characterData, characterState.currentHP, characterId]);
+
+  // Effect para limpar itens inválidos do inventário na inicialização
+  useEffect(() => {
+    if (characterState.inventory && characterState.inventory.length > 0) {
+      cleanInvalidInventoryItems();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [characterState.inventory?.length]);
 
   // Funções de gerenciamento de recursos
   const adjustResource = (type: 'hp' | 'mp' | 'vigor', amount: number) => {
@@ -596,39 +602,62 @@ const CharacterSheet: React.FC = () => {
     return skillToAttribute[skillName] || 'forca';
   };
 
-  // Função para determinar se uma habilidade é ativa (precisa de rolagem)
+  // Função para determinar se uma habilidade é ativa (precisa de rolagem ou ação)
   const isActiveAbility = (abilityName: string): boolean => {
-    const activeAbilities = [
-      // Evocador - Habilidades que fazem rolagens
-      'Combustão Controlada', 'Alimentar as Chamas', 'Marca Incinerante',
-      'Forma Fluida', 'Projétil de Água', 'Pulso Restaurador',
-      'Corrente Ascendente', 'Sopro Desestabilizador', 'Manto de Vento',
-      'Postura Inabalável', 'Abraço da Terra', 'Moldar Abrigo',
-      'Bálsamo de Luz', 'Luz Reveladora', 'Seta Luminosa',
-      'Véu de Engano', 'Toque Debilitante', 'Passo Sombrio',
-      
-      // Titã - Habilidades ativas
-      'Golpe Furioso', 'Grito de Guerra', 'Ignorar a Dor', 'Avanço Implacável',
-      'Postura Defensiva', 'Proteger Aliado', 'Escudo Ecoante', 'Ancorar Posição',
-      'Quebrar Escudo', 'Firmeza da Montanha', 'Impacto Arrasador', 'Rompante Poderoso',
-      
-      // Sentinela - Habilidades ativas
-      'Marca do Caçador', 'Disparo Preciso', 'Armadilha Improvisada', 'Companheiro Animal',
-      'Golpe Desorientador', 'Passo Fantasma', 'Ataque Furtivo', 'Visão Crepuscular',
-      'Estudar Oponente', 'Antecipar Movimento', 'Ponto Fraco', 'Leitura Rápida',
-      
-      // Elo - Habilidades ativas
-      'Palavra Calmante', 'Negociação Persuasiva', 'Elo Empático', 'Discurso Conciliador',
-      'Comando de Batalha', 'Grito Motivador', 'Performance Revigorante', 'Elo Protetor',
-      'Toque Restaurador Aprimorado', 'Vínculo Protetor', 'Palavras de Conforto', 'Detectar Dor'
+    // Se a habilidade existe no arquivo detalhado, verificar seu tipo
+    if (subclassAbilities[abilityName]) {
+      const ability = subclassAbilities[abilityName];
+      const passiveTypes = ['Passivo', 'Passivo/Gatilho'];
+      return !passiveTypes.includes(ability.type);
+    }
+
+    // Busca por variações do nome da habilidade
+    const abilityVariations = Object.keys(subclassAbilities).find(key => 
+      key.includes(abilityName) || abilityName.includes(key.split('(')[0].trim()) || 
+      key.split('(')[0].trim().includes(abilityName)
+    );
+    
+    if (abilityVariations) {
+      const ability = subclassAbilities[abilityVariations];
+      const passiveTypes = ['Passivo', 'Passivo/Gatilho'];
+      return !passiveTypes.includes(ability.type);
+    }
+
+    // Fallback: habilidades conhecidas como passivas
+    const passiveAbilities = [
+      'Ataque Furtivo', 'Visão Crepuscular', 'Presença Protetora', 'Ímpeto Selvagem',
+      'Golpe Destruidor', 'Passo Leve na Mata', 'Dança das Sombras', 'Análise Tática'
     ];
     
-    return activeAbilities.some(active => abilityName.includes(active));
+    // Se está na lista de passivas, retornar false
+    if (passiveAbilities.some(passive => abilityName.includes(passive))) {
+      return false;
+    }
+    
+    // Por padrão, considerar ativa se não está na lista de passivas
+    return true;
   };
 
   // Função para obter descrição completa de habilidade - CORRIGIDA
   const getAbilityDescription = (abilityName: string, subclassId?: string): string => {
-    // Descrições corrigidas baseadas no livro oficial
+    // Se a habilidade existe no arquivo detalhado, usar essa descrição
+    if (subclassAbilities[abilityName]) {
+      const ability = subclassAbilities[abilityName];
+      return `${ability.type} | ${ability.cost} | ${ability.description}`;
+    }
+
+    // Busca por variações do nome da habilidade
+    const abilityVariations = Object.keys(subclassAbilities).find(key => 
+      key.includes(abilityName) || abilityName.includes(key.split('(')[0].trim()) || 
+      key.split('(')[0].trim().includes(abilityName)
+    );
+    
+    if (abilityVariations) {
+      const ability = subclassAbilities[abilityVariations];
+      return `${ability.type} | ${ability.cost} | ${ability.description}`;
+    }
+
+    // Fallback para descrições simplificadas (mantido para compatibilidade)
     const abilityDescriptions: Record<string, string> = {
       // Evocador - Terra
       'Postura Inabalável': 'Ação: Gaste 1 PM para ganhar Resistência a Dano 2 até o fim do turno e não poder ser movido à força.',
@@ -811,38 +840,29 @@ const CharacterSheet: React.FC = () => {
   };
 
   const getTrainedSkills = () => {
-    const skills: string[] = [];
+    const trainedSkills = [];
     
-    // Perícias da classe
+    // Adicionar perícias de classe selecionadas
     if (characterData.selectedClassSkills) {
-      skills.push(...characterData.selectedClassSkills);
+      trainedSkills.push(...characterData.selectedClassSkills);
     }
     
-    // Perícias da raça
+    // Adicionar perícias de raça
     if (characterData.selectedRaceSkills) {
-      skills.push(...characterData.selectedRaceSkills);
+      trainedSkills.push(...characterData.selectedRaceSkills);
     }
     
-    // Perícias fixas da raça
-    if (raceData) {
-      if (characterData.race === 'faelan') {
-        skills.push('Furtividade', 'Percepção');
-      } else if (characterData.race === 'celeres') {
-        skills.push('Diplomacia', 'Intuição');
-      }
+    // Adicionar perícias de origem
+    if (originData?.trainedSkills) {
+      trainedSkills.push(...originData.trainedSkills);
     }
     
-    // Perícias da origem
-    if (originData) {
-      skills.push(...originData.trainedSkills);
+    // Adicionar perícia de patrono
+    if (deityData?.trainedSkill) {
+      trainedSkills.push(deityData.trainedSkill);
     }
     
-    // Perícia da divindade
-    if (deityData) {
-      skills.push(deityData.trainedSkill);
-    }
-    
-    return Array.from(new Set(skills)); // Remove duplicatas
+    return Array.from(new Set(trainedSkills)); // Remove duplicatas
   };
 
   const getClassIcon = (className?: string) => {
@@ -870,6 +890,215 @@ const CharacterSheet: React.FC = () => {
   const getSubclassName = (subclassId?: string) => {
     if (!subclassId) return '';
     return subclassData[subclassId]?.name || subclassId;
+  };
+
+  // SISTEMA DE EQUIPAMENTOS AVANÇADO
+
+  // Função para limpar inventário de itens inválidos
+  const cleanInvalidInventoryItems = () => {
+    const cleanedInventory = (characterState.inventory || []).filter(item => {
+      const equipmentData = equipment[item.equipmentId];
+      if (!equipmentData) {
+        console.warn(`Item inválido removido do inventário: ${item.name} (ID: ${item.equipmentId})`);
+        return false;
+      }
+      return true;
+    });
+
+    if (cleanedInventory.length !== (characterState.inventory || []).length) {
+      setCharacterState(prev => ({
+        ...prev,
+        inventory: cleanedInventory
+      }));
+    }
+  };
+
+  // Slots de equipamento disponíveis
+  const equipmentSlots = {
+    'main-hand': { name: 'Mão Principal', types: ['weapon'] },
+    'off-hand': { name: 'Mão Secundária', types: ['weapon', 'shield'] },
+    'armor': { name: 'Armadura', types: ['armor'] },
+    'neck': { name: 'Pescoço', types: ['item'] },
+    'ring-1': { name: 'Anel 1', types: ['item'] },
+    'ring-2': { name: 'Anel 2', types: ['item'] },
+    'back': { name: 'Costas', types: ['item'] },
+    'feet': { name: 'Pés', types: ['item'] }
+  };
+
+  // Verificar se item pode ser equipado em slot
+  const canEquipInSlot = (item: InventoryItem, slotId: string): boolean => {
+    const equipmentData = equipment[item.equipmentId];
+    const slot = equipmentSlots[slotId as keyof typeof equipmentSlots];
+    
+    if (!equipmentData || !slot) return false;
+    
+    return slot.types.includes(equipmentData.category);
+  };
+
+  // Equipar item em slot específico
+  const equipItem = (item: InventoryItem, slotId: string) => {
+    if (!canEquipInSlot(item, slotId)) return;
+    
+    // Desequipar item atual do slot se existir
+    const currentEquipped = characterState.inventory?.find(
+      invItem => invItem.isEquipped && invItem.equippedSlot === slotId
+    );
+    
+    let updatedInventory = [...(characterState.inventory || [])];
+    
+    if (currentEquipped) {
+      const currentIndex = updatedInventory.findIndex(invItem => invItem.id === currentEquipped.id);
+      if (currentIndex !== -1) {
+        updatedInventory[currentIndex] = {
+          ...updatedInventory[currentIndex],
+          isEquipped: false,
+          equippedSlot: undefined
+        };
+      }
+    }
+    
+    // Equipar novo item
+    const itemIndex = updatedInventory.findIndex(invItem => invItem.id === item.id);
+    if (itemIndex !== -1) {
+      updatedInventory[itemIndex] = {
+        ...updatedInventory[itemIndex],
+        isEquipped: true,
+        equippedSlot: slotId
+      };
+    }
+    
+    setCharacterState(prev => ({
+      ...prev,
+      inventory: updatedInventory
+    }));
+  };
+
+  // Desequipar item
+  const unequipItem = (item: InventoryItem) => {
+    const updatedInventory = (characterState.inventory || []).map(invItem =>
+      invItem.id === item.id
+        ? { ...invItem, isEquipped: false, equippedSlot: undefined }
+        : invItem
+    );
+    
+    setCharacterState(prev => ({
+      ...prev,
+      inventory: updatedInventory
+    }));
+  };
+
+  // Obter item equipado em slot específico
+  const getEquippedInSlot = (slotId: string): InventoryItem | undefined => {
+    return characterState.inventory?.find(
+      item => item.isEquipped && item.equippedSlot === slotId
+    );
+  };
+
+  // FUNÇÕES AVANÇADAS DO INVENTÁRIO
+
+  // Filtrar e ordenar inventário
+  const getFilteredAndSortedInventory = (inventory: InventoryItem[]) => {
+    return inventory
+      .filter(item => {
+        const equipmentData = equipment[item.equipmentId];
+        if (!equipmentData) return false;
+
+        // Filtro por busca
+        if (inventorySearchTerm && !equipmentData.name.toLowerCase().includes(inventorySearchTerm.toLowerCase())) {
+          return false;
+        }
+
+        // Filtro por categoria
+        switch (inventoryFilter) {
+          case 'weapons': return equipmentData.category === 'weapon';
+          case 'armor': return equipmentData.category === 'armor';
+          case 'items': return equipmentData.category === 'item';
+          case 'equipped': return item.isEquipped;
+          default: return true;
+        }
+      })
+      .sort((a, b) => {
+        const itemA = equipment[a.equipmentId];
+        const itemB = equipment[b.equipmentId];
+        if (!itemA || !itemB) return 0;
+
+        switch (inventorySortBy) {
+          case 'name': return itemA.name.localeCompare(itemB.name);
+          case 'weight': return (itemB.weight || 0) - (itemA.weight || 0);
+          case 'value': return itemB.price - itemA.price;
+          case 'category': return itemA.category.localeCompare(itemB.category);
+          default: return 0;
+        }
+      });
+  };
+
+  // Calcular bônus de ataque para arma equipada
+  const getWeaponAttackBonus = (weaponId: string): { attack: number, damage: number } => {
+    const weapon = equipment[weaponId];
+    if (!weapon || weapon.category !== 'weapon') return { attack: 0, damage: 0 };
+
+    const attributeKey = weapon.keyAttribute === 'FOR' ? 'FOR' : 'DES';
+    const attributeValue = characterData.finalAttributes?.[attributeKey] || 0;
+
+    return {
+      attack: attributeValue,
+      damage: attributeValue
+    };
+  };
+
+  // Calcular proteção total das armaduras equipadas
+  const getTotalArmorProtection = (): { reduction: number, penalties: string[] } => {
+    let totalReduction = 0;
+    const penalties: string[] = [];
+
+    characterState.inventory?.forEach(item => {
+      if (item.isEquipped) {
+        const equipmentData = equipment[item.equipmentId];
+        if (equipmentData?.category === 'armor') {
+          totalReduction += equipmentData.damageReduction || 0;
+          if (equipmentData.attributePenalty && equipmentData.attributePenalty !== '0') {
+            penalties.push(`${equipmentData.name}: ${equipmentData.attributePenalty}`);
+          }
+        }
+      }
+    });
+
+    return { reduction: totalReduction, penalties };
+  };
+
+  // Obter estatísticas do equipamento ativo
+  const getActiveEquipmentStats = () => {
+    const mainHandWeapon = getEquippedInSlot('main-hand');
+    const armor = getEquippedInSlot('armor');
+    const offHand = getEquippedInSlot('off-hand');
+
+    let attackBonus = 0;
+    let damageBonus = 0;
+    let protection = 0;
+    let specialEffects: string[] = [];
+
+    if (mainHandWeapon) {
+      const weaponStats = getWeaponAttackBonus(mainHandWeapon.equipmentId);
+      attackBonus += weaponStats.attack;
+      damageBonus += weaponStats.damage;
+    }
+
+    if (armor) {
+      const armorData = equipment[armor.equipmentId];
+      if (armorData?.damageReduction) {
+        protection += armorData.damageReduction;
+      }
+    }
+
+    return {
+      attackBonus,
+      damageBonus,
+      protection,
+      specialEffects,
+      mainWeapon: mainHandWeapon,
+      armorPiece: armor,
+      offHandItem: offHand
+    };
   };
 
   return (
@@ -1312,7 +1541,7 @@ const CharacterSheet: React.FC = () => {
             </div>
           </div>
 
-          {/* Coluna 2: Perícias (4 colunas) */}
+          {/* Coluna 2: Perícias + Habilidades (4 colunas) */}
           <div className="xl:col-span-4 lg:col-span-4 md:col-span-4 space-y-4">
             {/* Sistema de Perícias */}
             <ExpandedSkillSystem
@@ -1322,10 +1551,68 @@ const CharacterSheet: React.FC = () => {
               getTrainedSkills={getTrainedSkills}
               getSuccessTargets={getSuccessTargets}
             />
-          </div>
 
-          {/* Coluna 3: Habilidades + Equipamentos (4 colunas) */}
-          <div className="xl:col-span-4 lg:col-span-4 md:col-span-4 space-y-4">
+            {/* Habilidades Raciais */}
+            {raceData?.traits && raceData.traits.length > 0 && (
+              <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+                <div 
+                  className="bg-gradient-to-r from-emerald-500 to-green-500 p-4 cursor-pointer hover:from-emerald-600 hover:to-green-600 transition-colors"
+                  onClick={() => toggleSection('racialTraits')}
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Traços Raciais - {raceData.name}
+                    </h3>
+                    {collapsedSections.racialTraits ? (
+                      <ChevronDown className="w-5 h-5 text-white" />
+                    ) : (
+                      <ChevronUp className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                </div>
+
+                {!collapsedSections.racialTraits && (
+                  <div className="p-3">
+                    <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                      {raceData.traits.map((trait, index) => {
+                        const [traitName, traitDescription] = trait.split(':').map(part => part.trim());
+                        const isActive = traitName.includes('Salto') || traitName.includes('Luz') || traitName.includes('Manto');
+                        
+                        return (
+                          <div 
+                            key={index} 
+                            className={`bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg p-2 border border-emerald-200 hover:shadow-md transition-all duration-200 ${
+                              isActive ? 'cursor-pointer hover:border-emerald-300' : ''
+                            }`}
+                            onClick={isActive ? (e) => {
+                              const attributeKey = raceData.attributeBonus !== 'escolha' ? raceData.attributeBonus : 'sabedoria';
+                              const attributeValue = characterData.finalAttributes?.[attributeKey] || 0;
+                              executeInlineRoll(`${traitName}`, 'attribute', attributeValue, undefined, undefined, e);
+                            } : undefined}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-slate-800 text-xs">{traitName}</span>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  isActive ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'
+                                }`}>
+                                  {isActive ? '⚡' : '🛡️'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-xs text-emerald-700 leading-snug">
+                              {traitDescription || trait}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Habilidades de Subclasse */}
             {characterData.selectedSubclassAbilities && characterData.selectedSubclassAbilities.length > 0 && (
               <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
@@ -1349,6 +1636,23 @@ const CharacterSheet: React.FC = () => {
                 {!collapsedSections.abilities && (
                   <div className="p-3">
                     <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                      {/* Habilidade Passiva da Subclasse */}
+                      {subclassData[characterData.subclass!]?.passive && (
+                        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-2 border border-blue-200 hover:shadow-md transition-all duration-200">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-slate-800 text-xs">Habilidade Passiva</span>
+                              <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                                🛡️ Passiva
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-xs text-blue-700 leading-snug">
+                            {subclassData[characterData.subclass!].passive}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Habilidade de Nível 1 se existir */}
                       {subclassData[characterData.subclass!]?.level1Ability && (
                         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-2 border border-indigo-200 hover:shadow-md transition-all duration-200">
@@ -1405,7 +1709,10 @@ const CharacterSheet: React.FC = () => {
                 )}
               </div>
             )}
+          </div>
 
+          {/* Coluna 3: Equipamentos (4 colunas) */}
+          <div className="xl:col-span-4 lg:col-span-4 md:col-span-4 space-y-4">
             {/* Equipamentos */}
             <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
               <div 
@@ -1415,7 +1722,7 @@ const CharacterSheet: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     <Package className="w-5 h-5" />
-                    Equipamentos & Posses
+                    Sistema de Inventário
                   </h3>
                   {collapsedSections.equipment ? (
                     <ChevronDown className="w-5 h-5 text-white" />
@@ -1427,141 +1734,217 @@ const CharacterSheet: React.FC = () => {
               
               {!collapsedSections.equipment && (
                 <div className="p-3">
-                  <div className="space-y-1.5 max-h-80 overflow-y-auto">
-                {/* Equipamento Básico */}
-                    {initialFreeEquipment.map((item) => (
-                      <div key={item.id} className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-2 border border-gray-200 hover:shadow-md transition-all duration-200">
-                        <div className="flex items-center justify-between mb-1">
-                                                      <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-800 text-xs">{item.name}</span>
-                            <span className="text-xs bg-emerald-500 text-white px-2 py-1 rounded-full font-medium">
-                              Básico
-                            </span>
-                      </div>
-                  </div>
-                        {item.description && (
-                          <div className="text-xs text-slate-600 leading-snug">
-                            {item.description}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                {/* Equipamentos da Criação */}
-                {characterData.selectedEquipment && characterData.selectedEquipment.length > 0 && (
+                  {(() => {
+                    // Calcular estatísticas básicas
+                    const allInventory = [
+                      ...initialFreeEquipment.map(item => ({ 
+                        id: `free-${item.id}`, 
+                        name: item.name,
+                        equipmentId: item.id, 
+                        quantity: 1, 
+                        purchaseDate: new Date(),
+                        purchasePrice: 0,
+                        source: 'starting' as const,
+                        isEquipped: false
+                      })),
+                      ...(characterData.selectedEquipment || [])
+                        .filter(equipId => !characterState.inventory?.some(invItem => 
+                          invItem.equipmentId === equipId && invItem.source === 'starting'))
+                        .map(equipId => {
+                          const equipmentData = equipment[equipId];
+                          return { 
+                            id: `selected-${equipId}`, 
+                            name: equipmentData?.name || 'Item Desconhecido',
+                            equipmentId: equipId, 
+                            quantity: 1, 
+                            purchaseDate: new Date(),
+                            purchasePrice: 0,
+                            source: 'starting' as const,
+                            isEquipped: false
+                          };
+                        }),
+                      ...(characterState.inventory || [])
+                    ];
+                    
+                    const equipmentStats = getActiveEquipmentStats();
+                    const armorProtection = getTotalArmorProtection();
+                    const filteredInventory = getFilteredAndSortedInventory(allInventory);
+                    
+                    return (
                       <>
-                      {characterData.selectedEquipment
-                        .filter(equipId => {
-                          // Não mostrar equipamento se já existe no inventário como 'starting'
-                          return !characterState.inventory?.some(invItem => 
-                            invItem.equipmentId === equipId && invItem.source === 'starting'
-                          );
-                        })
-                        .map((equipId) => {
-                        const item = equipment[equipId];
-                        if (!item) return null;
-                        
-                          const getItemGradient = () => {
-                          switch (item.category) {
-                              case 'weapon': return 'from-red-50 to-pink-50';
-                              case 'armor': return 'from-blue-50 to-indigo-50';
-                              default: return 'from-green-50 to-emerald-50';
-                            }
-                          };
+                        {/* Resumo de Combate Ativo */}
+                        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg p-3 mb-3 border border-red-200">
+                          <h4 className="font-bold text-red-800 mb-3 flex items-center gap-2">
+                            <Swords className="w-4 h-4" />
+                            Status de Combate
+                          </h4>
                           
-                          const getItemBorder = () => {
-                            switch (item.category) {
-                              case 'weapon': return 'border-red-200';
-                              case 'armor': return 'border-blue-200';
-                              default: return 'border-green-200';
-                            }
-                          };
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="text-center">
+                              <div className="text-xs text-red-600 mb-1">Ataque</div>
+                              <div className="text-lg font-bold text-red-800">
+                                {equipmentStats.attackBonus >= 0 ? '+' : ''}{equipmentStats.attackBonus}
+                      </div>
+                              <div className="text-xs text-red-500">
+                                {equipmentStats.mainWeapon ? equipment[equipmentStats.mainWeapon.equipmentId]?.name || 'Arma' : 'Sem arma'}
+                  </div>
+                          </div>
+                            
+                            <div className="text-center">
+                              <div className="text-xs text-blue-600 mb-1">Proteção</div>
+                              <div className="text-lg font-bold text-blue-800">
+                                {armorProtection.reduction}
+                      </div>
+                              <div className="text-xs text-blue-500">
+                                {equipmentStats.armorPiece ? equipment[equipmentStats.armorPiece.equipmentId]?.name || 'Armadura' : 'Sem armadura'}
+                              </div>
+                            </div>
+                            
+                            <div className="text-center">
+                              <div className="text-xs text-green-600 mb-1">Dano</div>
+                              <div className="text-lg font-bold text-green-800">
+                                {equipmentStats.damageBonus >= 0 ? '+' : ''}{equipmentStats.damageBonus}
+                              </div>
+                              <div className="text-xs text-green-500">
+                                {equipmentStats.mainWeapon ? 
+                                  equipment[equipmentStats.mainWeapon.equipmentId]?.damage || '1d4' : 
+                                  'Desarmado'
+                                }
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Penalidades de Armadura */}
+                          {armorProtection.penalties.length > 0 && (
+                            <div className="mt-3 p-2 bg-orange-100 rounded border border-orange-300">
+                              <div className="text-xs font-medium text-orange-800 mb-1">
+                                <AlertTriangle className="w-3 h-3 inline mr-1" />
+                                Penalidades de Armadura:
+                              </div>
+                              <div className="text-xs text-orange-700">
+                                {armorProtection.penalties.join(', ')}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Slots de Equipamento */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 mb-3 border border-blue-200">
+                          <h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <Shield className="w-4 h-4" />
+                            Equipamentos Ativos
+                          </h4>
                           
-                          const getCategoryBadge = () => {
-                            switch (item.category) {
-                              case 'weapon': return 'bg-red-500 text-white';
-                              case 'armor': return 'bg-blue-500 text-white';
-                              default: return 'bg-green-500 text-white';
-                            }
-                          };
-                          
-                          const isWeapon = item.category === 'weapon';
+                          <div className="grid grid-cols-2 gap-2">
+                            {Object.entries(equipmentSlots).map(([slotId, slot]) => {
+                              const equippedItem = getEquippedInSlot(slotId);
+                              const equipmentData = equippedItem ? equipment[equippedItem.equipmentId] : null;
                         
                         return (
-                            <div 
-                              key={equipId} 
-                              className={`bg-gradient-to-r ${getItemGradient()} rounded-lg p-2 border ${getItemBorder()} hover:shadow-md transition-all duration-200 ${
-                                isWeapon ? 'cursor-pointer hover:border-red-300' : ''
-                              }`}
-                              onClick={isWeapon ? (e) => {
-                                if (item.damage) {
-                                  executeInlineRoll(`Dano: ${item.name}`, 'damage', undefined, undefined, item.damage, e);
-                                }
-                              } : undefined}
-                            >
+                                <div key={slotId} className="bg-white rounded-lg p-2 border border-gray-200 hover:shadow-md transition-all">
+                                  <div className="text-xs font-medium text-slate-600 mb-1">{slot.name}</div>
+                                  {equippedItem && equipmentData ? (
+                                    <div>
                               <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-slate-800 text-xs">{item.name}</span>
-                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryBadge()}`}>
-                                    {item.category === 'weapon' ? '⚔️ Arma' : 
-                                     item.category === 'armor' ? '🛡️ Armadura' : 
-                                     '📦 Item'}
-                                  </span>
-                                  <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded-full font-medium">
-                                    Inicial
-                                  </span>
+                                        <span className="text-xs font-medium text-slate-800 truncate">{equipmentData.name}</span>
+                                        <button
+                                          onClick={() => unequipItem(equippedItem)}
+                                          className="text-xs text-red-600 hover:text-red-800 ml-1"
+                                          title="Desequipar"
+                                        >
+                                          <Minus className="w-3 h-3" />
+                                        </button>
                           </div>
-                                <div className="text-sm font-bold text-slate-600">
-                                  {item.priceUnit === 'Ef' ? `${item.price} Ef` : `${item.price} EfP`}
+                                      {equipmentData.category === 'weapon' && equipmentData.damage && (
+                                        <div className="text-xs text-red-600">{equipmentData.damage}</div>
+                                      )}
+                                      {equipmentData.category === 'armor' && equipmentData.damageReduction && (
+                                        <div className="text-xs text-blue-600">Proteção: {equipmentData.damageReduction}</div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-gray-400 italic">Vazio</div>
+                                  )}
+                                </div>
+                              );
+                            })}
                     </div>
                               </div>
                               
-                              {item.description && (
-                                <div className="text-xs text-slate-600 leading-snug mb-1">
-                                  {item.description}
+                        {/* Controles de Inventário - Simplificados */}
+                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 mb-3 border border-purple-200">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Busca */}
+                            <div className="relative flex-1 min-w-0">
+                              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              <input
+                                type="text"
+                                placeholder="Buscar itens..."
+                                value={inventorySearchTerm}
+                                onChange={(e) => setInventorySearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                              />
                                 </div>
-                              )}
-                              
-                              {isWeapon && item.damage && (
-                                <div className="text-xs text-red-600 font-medium">
-                                  🎲 {item.damage} ({item.damageType}) • Clique para rolar dano
+                            
+                            {/* Filtro */}
+                            <div className="relative">
+                              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              <select
+                                value={inventoryFilter}
+                                onChange={(e) => setInventoryFilter(e.target.value as any)}
+                                className="pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none bg-white"
+                              >
+                                <option value="all">Todos</option>
+                                <option value="weapons">Armas</option>
+                                <option value="armor">Armaduras</option>
+                                <option value="items">Itens</option>
+                                <option value="equipped">Equipados</option>
+                              </select>
                                 </div>
-                              )}
-                              
-                              {item.category === 'armor' && (
-                                <div className="text-xs text-blue-600 font-medium">
-                                  🛡️ Redução: {item.damageReduction} • {item.armorType}
-                                  {item.attributePenalty && item.attributePenalty !== '0' && (
-                                    <span className="text-orange-600"> • Penalidade: {item.attributePenalty}</span>
-                                  )}
+                            
+                            {/* Ordenação */}
+                            <div className="relative">
+                              <SortAsc className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              <select
+                                value={inventorySortBy}
+                                onChange={(e) => setInventorySortBy(e.target.value as any)}
+                                className="pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none bg-white"
+                              >
+                                <option value="name">Nome</option>
+                                <option value="weight">Peso</option>
+                                <option value="value">Valor</option>
+                                <option value="category">Categoria</option>
+                              </select>
                                 </div>
-                              )}
                             </div>
-                          );
-                        })}
-                      </>
-                    )}
+                        </div>
 
-                {/* Inventário da Loja */}
-                {characterState.inventory && characterState.inventory.length > 0 && (
-                  <>
-                    {characterState.inventory.map((inventoryItem) => {
+                        {/* Inventário Harmonizado */}
+                        <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                          <h4 className="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                            <Package className="w-4 h-4" />
+                            Inventário ({filteredInventory.length} de {allInventory.length} itens)
+                          </h4>
+                          
+                          {filteredInventory.map((inventoryItem) => {
                       const item = equipment[inventoryItem.equipmentId];
                       if (!item) return null;
                       
                       const getItemGradient = () => {
+                              if (inventoryItem.isEquipped) return 'from-emerald-50 to-green-50';
                         switch (item.category) {
                           case 'weapon': return 'from-red-50 to-pink-50';
                           case 'armor': return 'from-blue-50 to-indigo-50';
-                          default: return 'from-green-50 to-emerald-50';
+                                default: return 'from-gray-50 to-slate-50';
                         }
                       };
                       
                       const getItemBorder = () => {
+                              if (inventoryItem.isEquipped) return 'border-emerald-300';
                         switch (item.category) {
                           case 'weapon': return 'border-red-200';
                           case 'armor': return 'border-blue-200';
-                          default: return 'border-green-200';
+                                default: return 'border-gray-200';
                         }
                       };
                       
@@ -1569,11 +1952,12 @@ const CharacterSheet: React.FC = () => {
                         switch (item.category) {
                           case 'weapon': return 'bg-red-500 text-white';
                           case 'armor': return 'bg-blue-500 text-white';
-                          default: return 'bg-green-500 text-white';
+                                default: return 'bg-gray-500 text-white';
                         }
                       };
                       
                       const isWeapon = item.category === 'weapon';
+                            const canBeEquipped = item.category === 'weapon' || item.category === 'armor';
                     
                       return (
                         <div 
@@ -1588,39 +1972,90 @@ const CharacterSheet: React.FC = () => {
                           } : undefined}
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
                               <span className="font-medium text-slate-800 text-xs">{item.name}</span>
+                                    
+                                    {/* Badges */}
                               {inventoryItem.quantity > 1 && (
                                 <span className="text-xs bg-purple-500 text-white px-1.5 py-0.5 rounded-full font-medium">
                                   {inventoryItem.quantity}x
                                 </span>
                               )}
+                                    
                               <span className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryBadge()}`}>
-                                {item.category === 'weapon' ? '⚔️ Arma' : 
-                                 item.category === 'armor' ? '🛡️ Armadura' : 
-                                 '📦 Item'}
+                                      {item.category === 'weapon' ? '⚔️' : 
+                                       item.category === 'armor' ? '🛡️' : 
+                                       '📦'}
                               </span>
-                              <span className="text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-medium">
-                                Comprado
-                              </span>
+                                    
+                                    {inventoryItem.isEquipped && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          unequipItem(inventoryItem);
+                                        }}
+                                        className="text-xs bg-emerald-500 text-white px-2 py-1 rounded-full font-medium hover:bg-red-500 hover:bg-opacity-80 transition-colors"
+                                        title="Clique para desequipar"
+                                      >
+                                        ✓ Equipado
+                                      </button>
+                                    )}
+                                    
+                                    {inventoryItem.source === 'starting' && (
+                                      <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded-full font-medium">
+                                        Inicial
+                                      </span>
+                                    )}
                             </div>
-                            <div className="text-sm font-bold text-slate-600">
-                              {item.priceUnit === 'Ef' ? `${item.price} Ef` : `${item.price} EfP`}
-                            </div>
+                                  
+                                  {/* Botão de Equipar */}
+                                  {canBeEquipped && !inventoryItem.isEquipped && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const compatibleSlot = Object.entries(equipmentSlots).find(([slotId, slot]) => 
+                                          slot.types.includes(item.category) && !getEquippedInSlot(slotId)
+                                        );
+                                        if (compatibleSlot) {
+                                          equipItem(inventoryItem, compatibleSlot[0]);
+                                        } else {
+                                          // Feedback visual de que não há slots disponíveis
+                                          const button = e.currentTarget;
+                                          button.textContent = 'Sem slot!';
+                                          button.className = 'text-xs bg-red-500 text-white px-2 py-1 rounded-full font-medium';
+                                          setTimeout(() => {
+                                            button.textContent = 'Equipar';
+                                            button.className = 'text-xs bg-green-500 text-white px-2 py-1 rounded-full font-medium hover:bg-green-600 transition-colors';
+                                          }, 1500);
+                                        }
+                                      }}
+                                      className="text-xs bg-green-500 text-white px-2 py-1 rounded-full font-medium hover:bg-green-600 transition-colors"
+                                      title="Equipar"
+                                    >
+                                      Equipar
+                                    </button>
+                                  )}
                           </div>
                           
-                          {item.description && (
+                                {/* Informações do Item */}
                             <div className="text-xs text-slate-600 leading-snug mb-1">
-                              {item.description}
-                            </div>
-                          )}
-                          
+                                  {/* Peso e Valor */}
+                                  <div className="flex items-center gap-3">
+                                    {item.weight && (
+                                      <span>Peso: {(item.weight * inventoryItem.quantity).toFixed(1)}kg</span>
+                                    )}
+                                    <span>Valor: {item.priceUnit === 'Ef' ? `${item.price} Ef` : `${item.price} EfP`}</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Stats da Arma */}
                           {isWeapon && item.damage && (
                             <div className="text-xs text-red-600 font-medium">
-                              🎲 {item.damage} ({item.damageType}) • Clique para rolar dano
+                                    🎲 {item.damage} ({item.damageType}) • {item.hands} • Clique para rolar
                             </div>
                           )}
                           
+                                {/* Stats da Armadura */}
                           {item.category === 'armor' && (
                             <div className="text-xs text-blue-600 font-medium">
                               🛡️ Redução: {item.damageReduction} • {item.armorType}
@@ -1629,52 +2064,38 @@ const CharacterSheet: React.FC = () => {
                               )}
                             </div>
                           )}
+
+                                {/* Descrição */}
+                                {item.description && (
+                                  <div className="text-xs text-slate-600 leading-snug mt-1">
+                                    {item.description}
+                                  </div>
+                                )}
                         </div>
                       );
                     })}
-                  </>
-                )}
-                  </div>
-
-                {/* Resumo Financeiro */}
-                {characterData.remainingGold !== undefined && (
-                    <div className="mt-4 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                        <Coins className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-yellow-800">Dinheiro Restante</div>
-                        <div className="text-xs text-yellow-600">Elfens (Ef) disponíveis</div>
-                      </div>
-                    </div>
-                    <div className="text-2xl font-bold text-yellow-600">
-                      {characterData.remainingGold.toFixed(1)} Ef
-                    </div>
-                  </div>
-                )}
-
-                {/* Data de Criação */}
-                {characterData.createdAt && (
-                  <div className="pt-4 border-t border-gray-200">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Calendar className="w-3 h-3" />
-                      Herói criado em {new Date(characterData.createdAt).toLocaleDateString('pt-BR', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
+                          
+                          {filteredInventory.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                              <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">
+                                {inventorySearchTerm || inventoryFilter !== 'all' ? 
+                                  'Nenhum item encontrado com os filtros atuais' : 
+                                  'Inventário vazio'
+                                }
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
               )}
             </div>
           </div>
         </div>
-      </div>
+                  </div>
 
       {/* Sistema de Rolagem Avançado */}
       <DiceRoller
@@ -1695,15 +2116,15 @@ const CharacterSheet: React.FC = () => {
                   <h3 className="text-xl font-bold text-white">
                     Notas de {characterData.personalDetails?.name}
                   </h3>
-                </div>
+                      </div>
                 <button 
                   onClick={() => setShowNotesSystem(false)}
                   className="text-white hover:text-gray-200 text-2xl font-bold p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
                 >
                   ×
                 </button>
-              </div>
-            </div>
+                      </div>
+                    </div>
             
             <div className="overflow-auto max-h-[calc(90vh-80px)]">
               <NotesSystem
@@ -1713,9 +2134,9 @@ const CharacterSheet: React.FC = () => {
                 onDeleteNote={deleteNote}
               />
             </div>
-          </div>
-        </div>
-      )}
+                    </div>
+                  </div>
+                )}
 
       {/* Sistema de Comércio */}
       {showShopSystem && (
@@ -1773,15 +2194,15 @@ const CharacterSheet: React.FC = () => {
                     {die}
                   </span>
                 ))}
-              </div>
-            </div>
-          )}
+                    </div>
+                  </div>
+                )}
 
           {/* Breakdown */}
           {quickRollResult.roll.rollPurpose && (
             <div className="mb-3 text-xs text-gray-600 bg-gray-50 p-2 rounded">
               {quickRollResult.roll.rollPurpose}
-            </div>
+              </div>
           )}
 
           {/* Resultado Final */}
@@ -1801,9 +2222,9 @@ const CharacterSheet: React.FC = () => {
                  quickRollResult.roll.successLevel === 'failure-normal' ? 'Fracasso Normal' :
                  'Fracasso Extremo!'}
               </span>
-            )}
+              )}
+            </div>
           </div>
-        </div>
       )}
 
       {/* Popup de Identidade do Herói */}
@@ -1811,156 +2232,156 @@ const CharacterSheet: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-auto">
             <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
                   <User className="w-6 h-6 text-blue-600" />
-                  Identidade do Herói
-                </h3>
+                    Identidade do Herói
+                  </h3>
                 <button 
                   onClick={() => setShowIdentityPopup(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
                 >
                   ×
                 </button>
-              </div>
-            </div>
-            
+        </div>
+      </div>
+
             <div className="p-6 space-y-4">
-              {/* Informações Básicas */}
-              <div className="grid grid-cols-1 gap-4">
-                {/* Linhagem e Origem */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs font-medium text-blue-600 mb-1 flex items-center gap-1">
-                        <Crown className="w-3 h-3" />
-                        LINHAGEM
-                      </div>
-                      <div className="font-bold text-blue-800">{raceData?.name}</div>
-                      <div className="text-xs text-blue-600 mt-1">
-                        Patrono: {raceData?.patron}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-medium text-indigo-600 mb-1 flex items-center gap-1">
-                        <Mountain className="w-3 h-3" />
-                        ORIGEM
-                      </div>
-                      <div className="font-bold text-indigo-800">{originData?.name || characterData.origin}</div>
-                      <div className="text-xs text-indigo-600 mt-1">
-                        {originData?.benefit.name}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Chamado e Divindade */}
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs font-medium text-purple-600 mb-1 flex items-center gap-1">
-                        <Star className="w-3 h-3" />
-                        CHAMADO
-                      </div>
-                      <div className="font-bold text-purple-800">{classData?.name}</div>
-                      <div className="text-xs text-purple-600 mt-1">
-                        {getSubclassName(characterData.subclass)}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-medium text-pink-600 mb-1 flex items-center gap-1">
-                        <Sun className="w-3 h-3" />
-                        PATRONO DIVINO
-                      </div>
-                      <div className="font-bold text-pink-800 flex items-center gap-1">
-                        <span>{getDeityIcon(characterData.deity)}</span>
-                        {deityData?.name || 'Nenhum'}
-                      </div>
-                      {deityData && (
-                        <div className="text-xs text-pink-600 mt-1">
-                          {deityData.title}
+                  {/* Informações Básicas */}
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Linhagem e Origem */}
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-xs font-medium text-blue-600 mb-1 flex items-center gap-1">
+                            <Crown className="w-3 h-3" />
+                            LINHAGEM
+                          </div>
+                          <div className="font-bold text-blue-800">{raceData?.name}</div>
+                          <div className="text-xs text-blue-600 mt-1">
+                            Patrono: {raceData?.patron}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Descrições Detalhadas */}
-              {characterData.personalDetails?.appearance && (
-                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Eye className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-emerald-800 mb-2">Aparência Física</div>
-                      <div className="text-sm text-emerald-700 leading-relaxed">
-                        {characterData.personalDetails.appearance}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {characterData.personalDetails?.personality && (
-                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Heart className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-amber-800 mb-2">Personalidade & Caráter</div>
-                      <div className="text-sm text-amber-700 leading-relaxed">
-                        {characterData.personalDetails.personality}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {characterData.personalDetails?.background && (
-                <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-200">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-violet-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-violet-800 mb-2">História & Antecedentes</div>
-                      <div className="text-sm text-violet-700 leading-relaxed">
-                        {characterData.personalDetails.background}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Origem Detalhada */}
-              {originData && (
-                <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-slate-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Mountain className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-slate-800 mb-2">Origem: {originData.name}</div>
-                      <div className="text-sm text-slate-700 leading-relaxed mb-3">
-                        {originData.description}
-                      </div>
-                      <div className="bg-slate-100 rounded-lg p-3">
-                        <div className="text-xs font-semibold text-slate-600 mb-1">
-                          💎 {originData.benefit.name}
+                        <div>
+                          <div className="text-xs font-medium text-indigo-600 mb-1 flex items-center gap-1">
+                            <Mountain className="w-3 h-3" />
+                            ORIGEM
+                          </div>
+                          <div className="font-bold text-indigo-800">{originData?.name || characterData.origin}</div>
+                          <div className="text-xs text-indigo-600 mt-1">
+                            {originData?.benefit.name}
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-600">
-                          {originData.benefit.description}
+                      </div>
+                    </div>
+
+                    {/* Chamado e Divindade */}
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-xs font-medium text-purple-600 mb-1 flex items-center gap-1">
+                            <Star className="w-3 h-3" />
+                            CHAMADO
+                          </div>
+                          <div className="font-bold text-purple-800">{classData?.name}</div>
+                          <div className="text-xs text-purple-600 mt-1">
+                            {getSubclassName(characterData.subclass)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-medium text-pink-600 mb-1 flex items-center gap-1">
+                            <Sun className="w-3 h-3" />
+                            PATRONO DIVINO
+                          </div>
+                          <div className="font-bold text-pink-800 flex items-center gap-1">
+                            <span>{getDeityIcon(characterData.deity)}</span>
+                            {deityData?.name || 'Nenhum'}
+                          </div>
+                          {deityData && (
+                            <div className="text-xs text-pink-600 mt-1">
+                              {deityData.title}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
+
+                  {/* Descrições Detalhadas */}
+                  {characterData.personalDetails?.appearance && (
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Eye className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-emerald-800 mb-2">Aparência Física</div>
+                          <div className="text-sm text-emerald-700 leading-relaxed">
+                            {characterData.personalDetails.appearance}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {characterData.personalDetails?.personality && (
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Heart className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-amber-800 mb-2">Personalidade & Caráter</div>
+                          <div className="text-sm text-amber-700 leading-relaxed">
+                            {characterData.personalDetails.personality}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {characterData.personalDetails?.background && (
+                    <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4 border border-violet-200">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-violet-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-violet-800 mb-2">História & Antecedentes</div>
+                          <div className="text-sm text-violet-700 leading-relaxed">
+                            {characterData.personalDetails.background}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Origem Detalhada */}
+                  {originData && (
+                    <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-200">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-slate-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Mountain className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-slate-800 mb-2">Origem: {originData.name}</div>
+                          <div className="text-sm text-slate-700 leading-relaxed mb-3">
+                            {originData.description}
+                          </div>
+                          <div className="bg-slate-100 rounded-lg p-3">
+                            <div className="text-xs font-semibold text-slate-600 mb-1">
+                              💎 {originData.benefit.name}
+                            </div>
+                            <div className="text-xs text-slate-600">
+                              {originData.benefit.description}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
             </div>
-          </div>
         </div>
       )}
 
@@ -1969,126 +2390,126 @@ const CharacterSheet: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-auto">
             <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
                   <Users className="w-6 h-6 text-green-600" />
-                  Herança Racial - {raceData.name}
-                </h3>
+                      Herança Racial - {raceData.name}
+                    </h3>
                 <button 
                   onClick={() => setShowRacialPopup(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
                 >
                   ×
                 </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              {/* Descrição da Raça */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Crown className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-green-800 mb-2">Linhagem dos {raceData.name}</div>
-                    <div className="text-sm text-green-700 leading-relaxed">
-                      {raceData.description}
-                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Traços Raciais */}
-              {raceData.traits.map((trait, index) => (
-                <div key={index} className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Feather className="w-3 h-3 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm text-emerald-700 leading-relaxed">
-                        <strong className="text-emerald-800">
-                          {trait.split(':')[0]}:
-                        </strong>
-                        {trait.split(':')[1]}
+                
+                  <div className="p-6 space-y-4">
+                    {/* Descrição da Raça */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Crown className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-green-800 mb-2">Linhagem dos {raceData.name}</div>
+                          <div className="text-sm text-green-700 leading-relaxed">
+                            {raceData.description}
+                          </div>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Traços Raciais */}
+                    {raceData.traits.map((trait, index) => (
+                      <div key={index} className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
+                        <div className="flex items-start gap-3">
+                          <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Feather className="w-3 h-3 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm text-emerald-700 leading-relaxed">
+                              <strong className="text-emerald-800">
+                                {trait.split(':')[0]}:
+                              </strong>
+                              {trait.split(':')[1]}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
           </div>
-        </div>
-      )}
+              </div>
+            )}
 
       {/* Popup de Bênção Divina */}
       {showDeityPopup && deityData && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-auto">
             <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
                   <Sun className="w-6 h-6 text-amber-600" />
-                  Bênção Divina
-                </h3>
+                      Bênção Divina
+                    </h3>
                 <button 
                   onClick={() => setShowDeityPopup(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
                 >
                   ×
                 </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              {/* Informações da Divindade */}
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 mb-4">
-                <div className="flex items-start gap-3">
-                  <div className="text-4xl flex-shrink-0">{getDeityIcon(characterData.deity)}</div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h5 className="font-bold text-amber-800 text-lg">{deityData.name}</h5>
-                      <span className="text-sm text-amber-600 italic">{deityData.title}</span>
-                    </div>
-                    <div className="text-sm text-amber-700 leading-relaxed mb-3">
-                      {deityData.description}
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-xs font-semibold text-amber-600 mb-1">Domínios:</div>
-                        <div className="text-xs text-amber-700">
-                          {deityData.domains.join(', ')}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-semibold text-amber-600 mb-1">Essências:</div>
-                        <div className="text-xs text-amber-700">
-                          {deityData.essences.join(', ')}
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
-              </div>
+                
+                  <div className="p-6">
+                    {/* Informações da Divindade */}
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 mb-4">
+                      <div className="flex items-start gap-3">
+                        <div className="text-4xl flex-shrink-0">{getDeityIcon(characterData.deity)}</div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h5 className="font-bold text-amber-800 text-lg">{deityData.name}</h5>
+                            <span className="text-sm text-amber-600 italic">{deityData.title}</span>
+                          </div>
+                          <div className="text-sm text-amber-700 leading-relaxed mb-3">
+                            {deityData.description}
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs font-semibold text-amber-600 mb-1">Domínios:</div>
+                              <div className="text-xs text-amber-700">
+                                {deityData.domains.join(', ')}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs font-semibold text-amber-600 mb-1">Essências:</div>
+                              <div className="text-xs text-amber-700">
+                                {deityData.essences.join(', ')}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-              {/* Benefício Divino */}
-              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl p-4 border-2 border-yellow-300">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-yellow-800 mb-2 text-lg">
-                      ✨ {deityData.benefit.name}
-                    </h5>
-                    <div className="text-sm text-yellow-700 leading-relaxed">
-                      {deityData.benefit.description}
+                    {/* Benefício Divino */}
+                    <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl p-4 border-2 border-yellow-300">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Sparkles className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <h5 className="font-bold text-yellow-800 mb-2 text-lg">
+                            ✨ {deityData.benefit.name}
+                          </h5>
+                          <div className="text-sm text-yellow-700 leading-relaxed">
+                            {deityData.benefit.description}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
