@@ -3,8 +3,8 @@
 // ===================================================================
 
 // Exportar todos os componentes UI de forma centralizada
-export { Button, type ButtonProps, type ButtonVariant, type ButtonSize } from './Button';
-export { default as ImageUpload } from './ImageUpload';
+export { Button, type ButtonProps, type ButtonVariant, type ButtonSize } from './button';
+export { default as ImageUpload } from './image-upload';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 export { Card, CardContent, CardHeader, CardTitle } from './card';
 export { Badge } from './badge';
@@ -13,4 +13,4 @@ export { Progress } from './progress';
 export { Label } from './label';
 
 // Exportações default para compatibilidade
-export { default as ButtonDefault } from './Button'; 
+export { default as ButtonDefault } from './button'; 
