@@ -1,5 +1,17 @@
 import { CharacterCreation } from '../types/character';
 import { CharacterState } from '../types/interactive';
+import { 
+  APP_VERSION, 
+  STORAGE_KEYS, 
+  AUTO_SAVE_CONFIG,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES 
+} from '../constants';
+import { 
+  validateCharacterData, 
+  ValidationResult,
+  sanitizeString
+} from './validation';
 
 export interface SavedCharacter {
   id: string;
@@ -26,16 +38,11 @@ export interface AutoSaveConfig {
   maxVersions: number; // máximo de versões mantidas no histórico
 }
 
-const STORAGE_KEY = 'elaria-characters';
-const BACKUP_KEY = 'elaria-characters-backup';
-const CONFIG_KEY = 'elaria-config';
-const CURRENT_VERSION = '1.1.0';
-
 // Configuração padrão de auto-salvamento
 const DEFAULT_CONFIG: AutoSaveConfig = {
-  enabled: true,
-  interval: 30000, // 30 segundos
-  maxVersions: 5
+  enabled: AUTO_SAVE_CONFIG.ENABLED,
+  interval: AUTO_SAVE_CONFIG.INTERVAL,
+  maxVersions: AUTO_SAVE_CONFIG.MAX_VERSIONS
 };
 
 export class CharacterStorage {
@@ -43,46 +50,55 @@ export class CharacterStorage {
   
   // Salvar personagem
   static saveCharacter(characterData: CharacterCreation, characterState: CharacterState, reason?: string): SavedCharacter {
-    // Validar dados antes de salvar
-    this.validateCharacterData(characterData, characterState);
-    
-    const characters = this.getAllCharacters();
-    
-    // Gerar ID único se não existir
-    const id = characterData.personalDetails?.name ? 
-      this.generateId(characterData.personalDetails.name) : 
-      this.generateId('Personagem');
-    
-    const savedCharacter: SavedCharacter = {
-      id,
-      name: characterData.personalDetails?.name || 'Sem Nome',
-      data: characterData,
-      state: characterState,
-      createdAt: characterData.createdAt ? new Date(characterData.createdAt) : new Date(),
-      lastModified: new Date(),
-      version: CURRENT_VERSION
-    };
-
-    // Verificar se já existe um personagem com esse ID
-    const existingIndex = characters.findIndex(char => char.id === id);
-    
-    if (existingIndex >= 0) {
-      // Salvar versão anterior no histórico antes de atualizar
-      this.saveToVersionHistory(characters[existingIndex], reason);
+    try {
+      // Validar dados antes de salvar
+      const validation = this.validateCharacterData(characterData, characterState);
+      if (!validation.isValid) {
+        throw new Error(`Dados inválidos: ${validation.errors.join(', ')}`);
+      }
       
-      // Atualizar existente
-      characters[existingIndex] = savedCharacter;
-    } else {
-      // Adicionar novo
-      characters.push(savedCharacter);
-    }
+      const characters = this.getAllCharacters();
+      
+      // Gerar ID único se não existir
+      const rawName = characterData.personalDetails?.name || 'Personagem';
+      const sanitizedName = sanitizeString(rawName);
+      const id = this.generateId(sanitizedName);
+      
+      const savedCharacter: SavedCharacter = {
+        id,
+        name: sanitizedName || 'Sem Nome',
+        data: characterData,
+        state: characterState,
+        createdAt: characterData.createdAt ? new Date(characterData.createdAt) : new Date(),
+        lastModified: new Date(),
+        version: APP_VERSION
+      };
 
-    this.saveToStorage(characters);
-    
-    // Fazer backup automático
-    this.createBackup();
-    
-    return savedCharacter;
+      // Verificar se já existe um personagem com esse ID
+      const existingIndex = characters.findIndex(char => char.id === id);
+      
+      if (existingIndex >= 0) {
+        // Salvar versão anterior no histórico antes de atualizar
+        this.saveToVersionHistory(characters[existingIndex], reason);
+        
+        // Atualizar existente
+        characters[existingIndex] = savedCharacter;
+      } else {
+        // Adicionar novo
+        characters.push(savedCharacter);
+      }
+
+      this.saveToStorage(characters);
+      
+      // Fazer backup automático
+      this.createBackup();
+      
+      console.log(SUCCESS_MESSAGES.CHARACTER_SAVED, savedCharacter.name);
+      return savedCharacter;
+    } catch (error) {
+      console.error(ERROR_MESSAGES.SAVE_FAILED, error);
+      throw error;
+    }
   }
 
   // Auto-salvamento de personagem
@@ -119,45 +135,15 @@ export class CharacterStorage {
     }
   }
 
-  // Validar dados do personagem
-  private static validateCharacterData(data: CharacterCreation, state: CharacterState): void {
-    // Validar dados básicos
-    if (!data.personalDetails?.name || data.personalDetails.name.trim() === '') {
-      throw new Error('Nome do personagem é obrigatório');
-    }
-
-    // Validar atributos (se existirem)
-    if (data.attributes && Object.keys(data.attributes).length > 0) {
-      // Validar valores de atributos conforme as regras do livro
-      for (const [attr, value] of Object.entries(data.attributes)) {
-        if (typeof value !== 'number') {
-          throw new Error(`Valor inválido para atributo ${attr}: deve ser um número`);
-        }
-        
-        // Conforme o livro.md: -5 ou menos causa efeitos drásticos
-        // Para criação de personagens, permitimos -1 até valores razoáveis
-        if (value < -1) {
-          throw new Error(`Valor muito baixo para atributo ${attr}: ${value} (mínimo -1 para personagens jogadores)`);
-        }
-        
-        // Para criação inicial, valores acima de 5 são improváveis com o sistema de pontos
-        // Mas permitimos valores maiores para personagens já criados/editados
-        if (value > 15) {
-          console.warn(`Valor muito alto para atributo ${attr}: ${value} - verifique se está correto`);
-        }
-      }
-    }
-
-    // Validar estado (apenas valores negativos são problemáticos)
-    if (state.currentHP < 0 || state.currentMP < 0 || state.currentVigor < 0) {
-      throw new Error('Valores de recursos não podem ser negativos');
-    }
+  // Validar dados do personagem (usa novo sistema de validação)
+  private static validateCharacterData(data: CharacterCreation, state: CharacterState): ValidationResult {
+    return validateCharacterData(data, state, { strict: false });
   }
 
   // Salvar no histórico de versões
   private static saveToVersionHistory(character: SavedCharacter, reason?: string): void {
     const config = this.getConfig();
-    const historyKey = `${STORAGE_KEY}-history-${character.id}`;
+    const historyKey = `${STORAGE_KEYS.HISTORY_PREFIX}${character.id}`;
     
     try {
       const existingHistory = localStorage.getItem(historyKey);
@@ -186,7 +172,7 @@ export class CharacterStorage {
 
   // Obter histórico de versões
   static getVersionHistory(characterId: string): CharacterVersion[] {
-    const historyKey = `${STORAGE_KEY}-history-${characterId}`;
+    const historyKey = `${STORAGE_KEYS.HISTORY_PREFIX}${characterId}`;
     
     try {
       const stored = localStorage.getItem(historyKey);
@@ -237,10 +223,10 @@ export class CharacterStorage {
       const backup = {
         timestamp: new Date(),
         characters,
-        version: CURRENT_VERSION
+        version: APP_VERSION
       };
       
-      localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+      localStorage.setItem(STORAGE_KEYS.BACKUP, JSON.stringify(backup));
     } catch (error) {
       console.error('Erro ao criar backup:', error);
     }
@@ -249,13 +235,13 @@ export class CharacterStorage {
   // Restaurar backup
   static restoreBackup(): boolean {
     try {
-      const backup = localStorage.getItem(BACKUP_KEY);
+      const backup = localStorage.getItem(STORAGE_KEYS.BACKUP);
       if (!backup) return false;
       
       const backupData = JSON.parse(backup);
       if (!backupData.characters) return false;
       
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(backupData.characters));
+      localStorage.setItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(backupData.characters));
       return true;
     } catch (error) {
       console.error('Erro ao restaurar backup:', error);
@@ -266,7 +252,7 @@ export class CharacterStorage {
   // Configuração do sistema
   static getConfig(): AutoSaveConfig {
     try {
-      const stored = localStorage.getItem(CONFIG_KEY);
+      const stored = localStorage.getItem(STORAGE_KEYS.CONFIG);
       if (!stored) return DEFAULT_CONFIG;
       
       return { ...DEFAULT_CONFIG, ...JSON.parse(stored) };
@@ -281,7 +267,7 @@ export class CharacterStorage {
       const currentConfig = this.getConfig();
       const updatedConfig = { ...currentConfig, ...newConfig };
       
-      localStorage.setItem(CONFIG_KEY, JSON.stringify(updatedConfig));
+      localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(updatedConfig));
       
       // Reiniciar todos os auto-saves com a nova configuração
       if (newConfig.interval || newConfig.enabled !== undefined) {
@@ -404,7 +390,7 @@ export class CharacterStorage {
       const updatedCharacter = {
         ...character,
         state: migratedState,
-        version: CURRENT_VERSION,
+        version: APP_VERSION,
         lastModified: new Date()
       };
       
@@ -420,7 +406,7 @@ export class CharacterStorage {
   // Obter todos os personagens
   static getAllCharacters(): SavedCharacter[] {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(STORAGE_KEYS.CHARACTERS);
       if (!stored) return [];
       
       const characters = JSON.parse(stored) as SavedCharacter[];
@@ -448,7 +434,7 @@ export class CharacterStorage {
       }
       
       // Remover histórico de versões também
-      const historyKey = `${STORAGE_KEY}-history-${id}`;
+      const historyKey = `${STORAGE_KEYS.HISTORY_PREFIX}${id}`;
       localStorage.removeItem(historyKey);
       
       // Parar auto-salvamento se ativo
@@ -539,7 +525,7 @@ export class CharacterStorage {
       character,
       history,
       exportDate: new Date(),
-      version: CURRENT_VERSION
+      version: APP_VERSION
     };
     
     return JSON.stringify(exportData, null, 2);
@@ -565,7 +551,7 @@ export class CharacterStorage {
       character.name = character.name + ' (Importado)';
       character.createdAt = new Date();
       character.lastModified = new Date();
-      character.version = CURRENT_VERSION;
+      character.version = APP_VERSION;
       
       const characters = this.getAllCharacters();
       characters.push(character);
@@ -573,7 +559,7 @@ export class CharacterStorage {
       
       // Importar histórico se disponível
       if (history.length > 0) {
-        const historyKey = `${STORAGE_KEY}-history-${newId}`;
+        const historyKey = `${STORAGE_KEYS.HISTORY_PREFIX}${newId}`;
         localStorage.setItem(historyKey, JSON.stringify(history));
       }
       
@@ -595,7 +581,7 @@ export class CharacterStorage {
     }));
     
     return JSON.stringify({
-      version: CURRENT_VERSION,
+      version: APP_VERSION,
       exportDate: new Date(),
       characters: charactersWithHistory,
       config: this.getConfig()
@@ -632,13 +618,13 @@ export class CharacterStorage {
       }
       
       // Remover dados principais
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(BACKUP_KEY);
+      localStorage.removeItem(STORAGE_KEYS.CHARACTERS);
+      localStorage.removeItem(STORAGE_KEYS.BACKUP);
       
       // Remover históricos de versões
       const characters = this.getAllCharacters();
       characters.forEach(char => {
-        const historyKey = `${STORAGE_KEY}-history-${char.id}`;
+        const historyKey = `${STORAGE_KEYS.HISTORY_PREFIX}${char.id}`;
         localStorage.removeItem(historyKey);
       });
       
@@ -685,7 +671,7 @@ export class CharacterStorage {
   // Obter data do último backup
   private static getLastBackupDate(): Date | null {
     try {
-      const backup = localStorage.getItem(BACKUP_KEY);
+      const backup = localStorage.getItem(STORAGE_KEYS.BACKUP);
       if (!backup) return null;
       
       const backupData = JSON.parse(backup);
@@ -710,7 +696,7 @@ export class CharacterStorage {
 
   private static saveToStorage(characters: SavedCharacter[]): void {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(characters));
+      localStorage.setItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(characters));
     } catch (error) {
       console.error('Erro ao salvar no localStorage:', error);
       throw new Error('Falha ao salvar personagens');

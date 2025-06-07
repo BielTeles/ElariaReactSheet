@@ -623,20 +623,20 @@ const ReferenceGuide: React.FC = () => {
                        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                          <p className="text-sm text-green-800">
                            <strong>Defesa Superior:</strong><br/>
-                           Reação > Ataque = Anula
+                           Reação {'>'} Ataque {'='} Anula
                          </p>
                        </div>
                        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
                          <p className="text-sm text-yellow-800">
                            <strong>Defesa Igual:</strong><br/>
-                           Bloqueio = Metade do dano<br/>
-                           Esquiva = Dano total
+                           Bloqueio {'='} Metade do dano<br/>
+                           Esquiva {'='} Dano total
                          </p>
                        </div>
                        <div className="bg-red-50 p-3 rounded-lg border border-red-200">
                          <p className="text-sm text-red-800">
                            <strong>Defesa Inferior:</strong><br/>
-                           Reação < Ataque = Acerta
+                           Reação {'<'} Ataque {'='} Acerta
                          </p>
                        </div>
                      </div>
