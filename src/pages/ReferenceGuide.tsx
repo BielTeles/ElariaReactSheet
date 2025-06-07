@@ -95,15 +95,15 @@ const ReferenceGuide: React.FC = () => {
       {/* Header Melhorado */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-2xl border-4 border-indigo-300">
         <div className="flex items-center space-x-4 mb-4">
-          <Link 
-            to="/" 
+        <Link 
+          to="/" 
             className="p-3 bg-white/20 hover:bg-white/30 rounded-lg transition-colors border-2 border-white/30 hover:border-white/50"
-          >
+        >
             <ArrowLeft size={24} className="text-white" />
-          </Link>
+        </Link>
           <div className="flex items-center space-x-3">
             <BookOpen size={32} className="text-yellow-300" />
-            <div>
+        <div>
               <h1 className="text-4xl font-fantasy font-bold">Guia de Referência</h1>
               <p className="text-indigo-100 text-lg font-medium">Explore o sistema e mundo de Elaria</p>
             </div>
@@ -120,7 +120,7 @@ const ReferenceGuide: React.FC = () => {
       {/* Navigation Sections */}
       {!activeSection ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sections.map((section) => (
+        {sections.map((section) => (
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
@@ -403,8 +403,8 @@ const ReferenceGuide: React.FC = () => {
                       </div>
                     </div>
                   )}
-                </div>
-              ))}
+          </div>
+        ))}
             </div>
                      )}
 
@@ -462,8 +462,8 @@ const ReferenceGuide: React.FC = () => {
                          <strong>Sucessos:</strong> Normal (13+), Bom (17+), Extremo (20+)
                        </p>
                      </div>
-                   </div>
-                   
+      </div>
+
                    <div>
                      <h4 className="font-bold text-gray-800 mb-2">Vantagem/Desvantagem por Atributo</h4>
                      <div className="grid md:grid-cols-2 gap-3">
@@ -548,8 +548,8 @@ const ReferenceGuide: React.FC = () => {
                      </h4>
                      <p className="text-sm text-orange-700 mt-2">
                        Energia física bruta para habilidades de combate. Exclusivo dos Titãs para manobras poderosas.
-                     </p>
-                   </div>
+        </p>
+      </div>
                  </div>
                </div>
              </div>
