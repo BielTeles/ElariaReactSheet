@@ -412,69 +412,112 @@ const ReferenceGuide: React.FC = () => {
              <div className="space-y-6">
                <h2 className="text-3xl font-bold text-gray-800 mb-6">⚙️ Sistema de Elaria</h2>
                
-               {/* Essências */}
+               {/* As Seis Grandes Essências - CORRIGIDO */}
                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                 <h3 className="text-2xl font-bold text-gray-800 mb-4">✨ As Seis Essências</h3>
+                 <h3 className="text-2xl font-bold text-gray-800 mb-4">✨ As Seis Grandes Essências Primordiais</h3>
                  <p className="text-gray-700 mb-4">
-                   O mundo de Elaria é fundamentado em seis Essências primordiais que definem tanto a realidade física quanto os aspectos espirituais e psicológicos dos seres vivos:
+                   O mundo de Elaria foi tecido por seis Essências primordiais que definem toda a realidade. Cada atributo dos personagens é o reflexo mortal dessas forças fundamentais:
                  </p>
                  <div className="grid md:grid-cols-2 gap-4">
                    <div className="space-y-3">
                      <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                       <h4 className="font-bold text-red-800">🔥 Chama Interior</h4>
-                       <p className="text-sm text-red-700">Paixão, determinação e força de vontade que impulsiona ações decisivas.</p>
+                       <h4 className="font-bold text-red-800">💪 Vontade Indomável</h4>
+                       <p className="text-sm text-red-700"><strong>Força (FOR):</strong> Afirmação e poder direto. Poder muscular bruto e capacidade física.</p>
                      </div>
                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                        <h4 className="font-bold text-blue-800">🌊 Fluxo Incessante</h4>
-                       <p className="text-sm text-blue-700">Movimento, adaptabilidade e capacidade de mudança constante.</p>
+                       <p className="text-sm text-blue-700"><strong>Destreza (DES):</strong> Mudança, movimento e adaptabilidade rápida. Agilidade e reflexos.</p>
                      </div>
                      <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                       <h4 className="font-bold text-green-800">🌱 Resiliência Eterna</h4>
-                       <p className="text-sm text-green-700">Estabilidade, resistência e capacidade de perdurar através do tempo.</p>
+                       <h4 className="font-bold text-green-800">🛡️ Resiliência Eterna</h4>
+                       <p className="text-sm text-green-700"><strong>Constituição (CON):</strong> Permanência, durabilidade e capacidade de suportar. Resistência física.</p>
                      </div>
                    </div>
                    <div className="space-y-3">
                      <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
                        <h4 className="font-bold text-purple-800">🎯 Olhar Penetrante</h4>
-                       <p className="text-sm text-purple-700">Percepção aguçada, intuição e capacidade de ver além das aparências.</p>
+                       <p className="text-sm text-purple-700"><strong>Inteligência (INT):</strong> Razão, compreensão de padrões e análise crítica. Raciocínio lógico.</p>
+                     </div>
+                     <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-200">
+                       <h4 className="font-bold text-indigo-800">🧘 Sentir Profundo</h4>
+                       <p className="text-sm text-indigo-700"><strong>Sabedoria (SAB):</strong> Intuição, percepção sutil e conexão empática. Sintonia com o ambiente.</p>
                      </div>
                      <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
-                       <h4 className="font-bold text-amber-800">⚡ Vontade Indomável</h4>
-                       <p className="text-sm text-amber-700">Força interior, coragem e determinação inabalável.</p>
-                     </div>
-                     <div className="bg-teal-50 p-3 rounded-lg border border-teal-200">
-                       <h4 className="font-bold text-teal-800">🧘 Sentir Profundo</h4>
-                       <p className="text-sm text-teal-700">Empatia, conexão espiritual e compreensão emocional profunda.</p>
+                       <h4 className="font-bold text-amber-800">🔥 Chama Interior</h4>
+                       <p className="text-sm text-amber-700"><strong>Carisma (CAR):</strong> Presença, conexão, inspiração e influência. Força de personalidade.</p>
                      </div>
                    </div>
                  </div>
                </div>
 
-               {/* Sistema de Dados */}
+               {/* Sistema de Dados - CORRIGIDO */}
                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-                 <h3 className="text-2xl font-bold text-gray-800 mb-4">🎲 Sistema de Dados</h3>
+                 <h3 className="text-2xl font-bold text-gray-800 mb-4">🎲 Sistema de Dados e Testes</h3>
                  <div className="space-y-4">
                    <div>
-                     <h4 className="font-bold text-gray-800 mb-2">Teste Básico</h4>
-                     <p className="text-gray-700 mb-2">Role 1d20 + modificador do atributo + valor da perícia vs. dificuldade.</p>
-                     <div className="bg-gray-50 p-3 rounded-lg">
-                       <p className="text-sm text-gray-600">
-                         <strong>Sucessos:</strong> Normal (13+), Bom (17+), Extremo (20+)
-                       </p>
-                     </div>
-      </div>
+                     <h4 className="font-bold text-gray-800 mb-2">Como Fazer um Teste</h4>
+                     <p className="text-gray-700 mb-2">1. MJ determina <strong>Atributo</strong> (para dados de vantagem/desvantagem) e <strong>Perícia</strong></p>
+                     <p className="text-gray-700 mb-2">2. Role dados conforme valor do atributo e pegue o maior/menor</p>
+                     <p className="text-gray-700 mb-2">3. Compare resultado d20 com Planilha de Sucessos usando valor da perícia</p>
+                   </div>
 
                    <div>
-                     <h4 className="font-bold text-gray-800 mb-2">Vantagem/Desvantagem por Atributo</h4>
-                     <div className="grid md:grid-cols-2 gap-3">
-                       <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                         <p className="text-sm text-green-800">
-                           <strong>Atributo Alto (15+):</strong> Role 2d20, use o maior
-                         </p>
-                       </div>
+                     <h4 className="font-bold text-gray-800 mb-2">Dados de Vantagem/Desvantagem por Atributo</h4>
+                     <div className="grid md:grid-cols-3 gap-3">
                        <div className="bg-red-50 p-3 rounded-lg border border-red-200">
                          <p className="text-sm text-red-800">
-                           <strong>Atributo Baixo (8-):</strong> Role 2d20, use o menor
+                           <strong>Atributo -1 ou menos:</strong><br/>
+                           Role 2d20, use o MENOR
+                         </p>
+                       </div>
+                       <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                         <p className="text-sm text-gray-800">
+                           <strong>Atributo 0 ou 1:</strong><br/>
+                           Role 1d20 normal
+                         </p>
+                       </div>
+                       <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                         <p className="text-sm text-green-800">
+                           <strong>Atributo 2+:</strong><br/>
+                           Role múltiplos d20, use o MAIOR<br/>
+                           <small>(2-3: 2d20, 4-5: 3d20, etc.)</small>
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+
+                   <div>
+                     <h4 className="font-bold text-gray-800 mb-2">Graus de Sucesso</h4>
+                     <div className="bg-gray-50 p-3 rounded-lg">
+                       <p className="text-sm text-gray-600">
+                         <strong>Fracasso Extremo:</strong> 1 natural no d20<br/>
+                         <strong>Fracasso Normal:</strong> Abaixo do necessário<br/>
+                         <strong>Sucesso Normal:</strong> Alcança valor base<br/>
+                         <strong>Sucesso Bom:</strong> Alcança valor superior<br/>
+                         <strong>Sucesso Extremo:</strong> 20 natural ou valor máximo
+                       </p>
+                     </div>
+                   </div>
+
+                   <div>
+                     <h4 className="font-bold text-gray-800 mb-2">Testes de Resistência</h4>
+                     <div className="grid md:grid-cols-3 gap-3">
+                       <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                         <p className="text-sm text-orange-800">
+                           <strong>Fortitude (CON):</strong><br/>
+                           Doenças, venenos, fadiga
+                         </p>
+                       </div>
+                       <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                         <p className="text-sm text-blue-800">
+                           <strong>Reflexos (DES):</strong><br/>
+                           Explosões, armadilhas, quedas
+                         </p>
+                       </div>
+                       <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                         <p className="text-sm text-purple-800">
+                           <strong>Vontade (SAB):</strong><br/>
+                           Medo, encantamentos, controle mental
                          </p>
                        </div>
                      </div>
@@ -482,44 +525,47 @@ const ReferenceGuide: React.FC = () => {
                  </div>
                </div>
 
-               {/* Elementos */}
+               {/* Os Seis Elementos - CORRETO */}
                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                  <h3 className="text-2xl font-bold text-gray-800 mb-4">🌟 Os Seis Elementos</h3>
+                 <p className="text-gray-700 mb-4">
+                   A magia em Elaria deriva dos seis elementos fundamentais. Evocadores especializam-se em um Caminho Elemental:
+                 </p>
                  <div className="grid md:grid-cols-3 gap-4">
                    <div className="bg-red-50 p-4 rounded-lg border border-red-200 text-center">
                      <div className="text-3xl mb-2">🔥</div>
                      <h4 className="font-bold text-red-800">Fogo</h4>
-                     <p className="text-sm text-red-700">Destruição, criação, paixão, forja</p>
+                     <p className="text-sm text-red-700">Paixão, transformação, energia primordial da criação e destruição</p>
                    </div>
                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-center">
                      <div className="text-3xl mb-2">🌊</div>
                      <h4 className="font-bold text-blue-800">Água</h4>
-                     <p className="text-sm text-blue-700">Adaptabilidade, ciclos, cura, mistérios</p>
+                     <p className="text-sm text-blue-700">Fluidez, adaptabilidade, ciclos da vida, cura e mistérios</p>
                    </div>
                    <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
                      <div className="text-3xl mb-2">🌍</div>
                      <h4 className="font-bold text-green-800">Terra</h4>
-                     <p className="text-sm text-green-700">Estabilidade, resistência, crescimento</p>
+                     <p className="text-sm text-green-700">Estabilidade, resistência, permanência e crescimento</p>
                    </div>
                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
                      <div className="text-3xl mb-2">💨</div>
                      <h4 className="font-bold text-gray-800">Ar</h4>
-                     <p className="text-sm text-gray-700">Liberdade, movimento, comunicação</p>
+                     <p className="text-sm text-gray-700">Liberdade, movimento, comunicação e mudança rápida</p>
                    </div>
                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-center">
                      <div className="text-3xl mb-2">☀️</div>
                      <h4 className="font-bold text-yellow-800">Luz</h4>
-                     <p className="text-sm text-yellow-700">Verdade, clareza, esperança, proteção</p>
+                     <p className="text-sm text-yellow-700">Verdade, clareza, esperança, proteção e revelação</p>
                    </div>
                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 text-center">
                      <div className="text-3xl mb-2">🌙</div>
                      <h4 className="font-bold text-purple-800">Sombra</h4>
-                     <p className="text-sm text-purple-700">Mistério, intuição, segredos, repouso</p>
+                     <p className="text-sm text-purple-700">Mistério, intuição, segredos, repouso e o oculto</p>
                    </div>
                  </div>
                </div>
 
-               {/* Recursos do Personagem */}
+               {/* Recursos do Personagem - CORRIGIDO */}
                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
                  <h3 className="text-2xl font-bold text-gray-800 mb-4">💎 Recursos do Personagem</h3>
                  <div className="grid md:grid-cols-3 gap-4">
@@ -529,7 +575,7 @@ const ReferenceGuide: React.FC = () => {
                        Pontos de Vida (PV)
                      </h4>
                      <p className="text-sm text-red-700 mt-2">
-                       Resistência física e capacidade de suportar danos. Determinado pela classe e Constituição.
+                       Resistência física e capacidade de suportar danos. Baseado na classe e Constituição. Representa sua durabilidade em combate.
                      </p>
                    </div>
                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
@@ -538,7 +584,7 @@ const ReferenceGuide: React.FC = () => {
                        Pontos de Mana (PM)
                      </h4>
                      <p className="text-sm text-blue-700 mt-2">
-                       Energia mística para conjurar magias e habilidades especiais. Usado por Evocadores, Sentinelas e Elos.
+                       Energia mística para conjurar magias e habilidades especiais. Usado por Evocadores, Sentinelas e Elos para suas habilidades sobrenaturais.
                      </p>
                    </div>
                    <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
@@ -547,9 +593,54 @@ const ReferenceGuide: React.FC = () => {
                        Pontos de Vigor (V)
                      </h4>
                      <p className="text-sm text-orange-700 mt-2">
-                       Energia física bruta para habilidades de combate. Exclusivo dos Titãs para manobras poderosas.
+                       Energia física bruta exclusiva dos Titãs. Igual a 1 + Constituição. Usado para manobras poderosas e habilidades de combate corpo a corpo.
         </p>
       </div>
+                 </div>
+               </div>
+
+               {/* Combate - NOVO */}
+               <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                 <h3 className="text-2xl font-bold text-gray-800 mb-4">⚔️ Sistema de Combate</h3>
+                 <div className="space-y-4">
+                   <div>
+                     <h4 className="font-bold text-gray-800 mb-2">Sequência de Ataque</h4>
+                     <div className="bg-gray-50 p-3 rounded-lg">
+                       <p className="text-sm text-gray-700">
+                         1. <strong>Declarar Ataque:</strong> Atacante escolhe alvo e tipo de ataque<br/>
+                         2. <strong>Teste de Ataque:</strong> Rola dados conforme atributo relevante<br/>
+                         3. <strong>Defensor Escolhe Reação:</strong> Bloqueio (CON) ou Esquiva (DES)<br/>
+                         4. <strong>Teste de Reação:</strong> Defensor rola sua defesa<br/>
+                         5. <strong>Comparar Sucessos:</strong> Determina se ataque acerta<br/>
+                         6. <strong>Calcular Dano:</strong> Rola dano e aplica Redução de Dano (RD)
+                       </p>
+                     </div>
+                   </div>
+
+                   <div>
+                     <h4 className="font-bold text-gray-800 mb-2">Resolução de Defesa</h4>
+                     <div className="grid md:grid-cols-3 gap-3">
+                       <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                         <p className="text-sm text-green-800">
+                           <strong>Defesa Superior:</strong><br/>
+                           Reação > Ataque = Anula
+                         </p>
+                       </div>
+                       <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                         <p className="text-sm text-yellow-800">
+                           <strong>Defesa Igual:</strong><br/>
+                           Bloqueio = Metade do dano<br/>
+                           Esquiva = Dano total
+                         </p>
+                       </div>
+                       <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                         <p className="text-sm text-red-800">
+                           <strong>Defesa Inferior:</strong><br/>
+                           Reação < Ataque = Acerta
+                         </p>
+                       </div>
+                     </div>
+                   </div>
                  </div>
                </div>
              </div>
