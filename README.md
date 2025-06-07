@@ -39,7 +39,7 @@ O **Elaria RPG** é um sistema completo de gerenciamento de fichas de personagen
 
 ## 🚀 **Demo Online**
 
-🌐 **[Acesse a aplicação](https://elaria-react-sheet.vercel.app/)**
+🌐 **[Acesse a aplicação](https://elaria-sheet.vercel.app)**
 
 ---
 
