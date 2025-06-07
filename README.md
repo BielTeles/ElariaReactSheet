@@ -218,7 +218,7 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 **Gabriel Teles**
 - GitHub: [@BielTeles](https://github.com/BielTeles)
-- LinkedIn: [Gabriel Teles](https://linkedin.com/in/gabriel-teles)
+- LinkedIn: [Gabriel Teles](https://linkedin.com/in/gabrieltelesrosa)
 
 ---
 
