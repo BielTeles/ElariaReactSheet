@@ -51,50 +51,50 @@ export class CharacterStorage {
   // Salvar personagem
   static saveCharacter(characterData: CharacterCreation, characterState: CharacterState, reason?: string): SavedCharacter {
     try {
-      // Validar dados antes de salvar
+    // Validar dados antes de salvar
       const validation = this.validateCharacterData(characterData, characterState);
       if (!validation.isValid) {
         throw new Error(`Dados inválidos: ${validation.errors.join(', ')}`);
       }
-      
-      const characters = this.getAllCharacters();
-      
-      // Gerar ID único se não existir
+    
+    const characters = this.getAllCharacters();
+    
+    // Gerar ID único se não existir
       const rawName = characterData.personalDetails?.name || 'Personagem';
       const sanitizedName = sanitizeString(rawName);
       const id = this.generateId(sanitizedName);
-      
-      const savedCharacter: SavedCharacter = {
-        id,
+    
+    const savedCharacter: SavedCharacter = {
+      id,
         name: sanitizedName || 'Sem Nome',
-        data: characterData,
-        state: characterState,
-        createdAt: characterData.createdAt ? new Date(characterData.createdAt) : new Date(),
-        lastModified: new Date(),
+      data: characterData,
+      state: characterState,
+      createdAt: characterData.createdAt ? new Date(characterData.createdAt) : new Date(),
+      lastModified: new Date(),
         version: APP_VERSION
-      };
+    };
 
-      // Verificar se já existe um personagem com esse ID
-      const existingIndex = characters.findIndex(char => char.id === id);
+    // Verificar se já existe um personagem com esse ID
+    const existingIndex = characters.findIndex(char => char.id === id);
+    
+    if (existingIndex >= 0) {
+      // Salvar versão anterior no histórico antes de atualizar
+      this.saveToVersionHistory(characters[existingIndex], reason);
       
-      if (existingIndex >= 0) {
-        // Salvar versão anterior no histórico antes de atualizar
-        this.saveToVersionHistory(characters[existingIndex], reason);
-        
-        // Atualizar existente
-        characters[existingIndex] = savedCharacter;
-      } else {
-        // Adicionar novo
-        characters.push(savedCharacter);
-      }
+      // Atualizar existente
+      characters[existingIndex] = savedCharacter;
+    } else {
+      // Adicionar novo
+      characters.push(savedCharacter);
+    }
 
-      this.saveToStorage(characters);
-      
-      // Fazer backup automático
-      this.createBackup();
-      
+    this.saveToStorage(characters);
+    
+    // Fazer backup automático
+    this.createBackup();
+    
       console.log(SUCCESS_MESSAGES.CHARACTER_SAVED, savedCharacter.name);
-      return savedCharacter;
+    return savedCharacter;
     } catch (error) {
       console.error(ERROR_MESSAGES.SAVE_FAILED, error);
       throw error;

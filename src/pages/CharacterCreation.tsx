@@ -9,15 +9,15 @@ const CharacterCreation: React.FC = () => {
       {/* Header Melhorado */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white shadow-2xl border-4 border-purple-300">
         <div className="flex items-center space-x-4 mb-4">
-          <Link 
-            to="/characters" 
+        <Link 
+          to="/characters" 
             className="p-3 bg-white/20 hover:bg-white/30 rounded-lg transition-colors border-2 border-white/30 hover:border-white/50"
-          >
+        >
             <ArrowLeft size={24} className="text-white" />
-          </Link>
+        </Link>
           <div className="flex items-center space-x-3">
             <Sparkles size={32} className="text-yellow-300" />
-            <div>
+        <div>
               <h1 className="text-4xl font-fantasy font-bold">Criar Personagem</h1>
               <p className="text-purple-100 text-lg font-medium">Forje seu herói de Elaria</p>
             </div>

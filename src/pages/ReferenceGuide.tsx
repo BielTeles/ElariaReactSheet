@@ -405,7 +405,7 @@ const ReferenceGuide: React.FC = () => {
                   )}
           </div>
         ))}
-            </div>
+      </div>
                      )}
 
            {activeSection === 'system' && (

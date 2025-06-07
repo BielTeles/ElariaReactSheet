@@ -1130,7 +1130,7 @@ const CharacterSheet: React.FC = () => {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                      {getClassIcon(characterData.mainClass)}
+                  {getClassIcon(characterData.mainClass)}
                     </div>
                   )}
                 </div>

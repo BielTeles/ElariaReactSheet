@@ -129,8 +129,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       fullWidth ? 'w-full' : '',
       className
     ].join(' ').trim();
-
-    return (
+  
+  return (
       <button
         ref={ref}
         className={buttonClassName}
@@ -153,8 +153,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {!isLoading && rightIcon && (
           <span className="flex-shrink-0">{rightIcon}</span>
         )}
-      </button>
-    );
+    </button>
+  );
   }
 );
 

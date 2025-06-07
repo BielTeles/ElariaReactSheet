@@ -28,7 +28,7 @@ const Header: React.FC = () => {
    */
   const isActive = (path: string): boolean => {
     if (path === ROUTES.HOME) {
-      return location.pathname === path;
+    return location.pathname === path;
     }
     return location.pathname.startsWith(path);
   };
@@ -162,7 +162,7 @@ const Header: React.FC = () => {
               const Icon = item.icon;
               
               return (
-                <Link
+              <Link
                   key={item.path}
                   to={item.path}
                   className={`
@@ -175,12 +175,12 @@ const Header: React.FC = () => {
                   `}
                   aria-label={item.ariaLabel}
                   aria-current={active ? 'page' : undefined}
-                >
+              >
                   <Icon size={24} aria-hidden="true" />
                   <span className="text-sm font-semibold">
                     {item.label}
                   </span>
-                </Link>
+              </Link>
               );
             })}
           </div>

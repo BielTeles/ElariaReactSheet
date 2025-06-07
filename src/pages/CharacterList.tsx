@@ -417,7 +417,7 @@ const CharacterList: React.FC = () => {
                           />
                         ) : (
                           <div className="w-full h-full bg-white bg-opacity-20 flex items-center justify-center">
-                            {getClassIcon(character.data.mainClass)}
+                        {getClassIcon(character.data.mainClass)}
                           </div>
                         )}
                       </div>

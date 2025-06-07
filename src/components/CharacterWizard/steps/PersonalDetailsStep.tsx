@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CharacterCreation } from '../../../types/character';
 import { User, FileText, Smile, BookOpen } from 'lucide-react';
-import ImageUpload from '../../ui/ImageUpload';
+import { ImageUpload } from '../../ui';
 
 interface PersonalDetailsStepProps {
   data: CharacterCreation;
