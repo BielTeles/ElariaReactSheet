@@ -222,15 +222,6 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ---
 
-## 🙏 **Agradecimentos**
-
-- **Sistema Elaria** - Sistema de RPG que inspirou este projeto
-- **React Team** - Pela excelente biblioteca
-- **Tailwind CSS** - Pelo framework CSS incrível
-- **Vercel** - Pela hospedagem gratuita
-
----
-
 <div align="center">
 
 **⭐ Se você gostou do projeto, não esqueça de dar uma estrela!**
