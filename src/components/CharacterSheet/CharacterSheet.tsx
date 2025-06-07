@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Edit3, Save, Target, Heart, Zap,
@@ -22,7 +22,6 @@ import ShopSystem from '../ShopSystem/ShopSystem';
 
 import { DiceRoll, CharacterState, CharacterNote, Transaction, InventoryItem, ShopItem } from '../../types/interactive';
 import { CharacterStorage, SavedCharacter } from '../../utils/characterStorage';
-import { Character } from '../../types/character';
 
 interface CharacterData {
   personalDetails?: {
@@ -30,6 +29,7 @@ interface CharacterData {
     appearance?: string;
     personality?: string;
     background?: string;
+    portraitImage?: string;
   };
   race?: string;
   mainClass?: string;
@@ -96,7 +96,10 @@ const CharacterSheet: React.FC = () => {
     equippedAccessories: []
   });
   
-  const characterData: CharacterData = location.state?.characterData || savedCharacter?.data || {};
+  const characterData: CharacterData = useMemo(() => 
+    location.state?.characterData || savedCharacter?.data || {}, 
+    [location.state?.characterData, savedCharacter?.data]
+  );
   const isNewCharacter = location.state?.isNewCharacter || false;
 
   // Estados para o sistema de rolagem integrado
@@ -1118,8 +1121,18 @@ const CharacterSheet: React.FC = () => {
               
               {/* Avatar do Personagem */}
               <div className="relative flex-shrink-0">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg border-2 border-slate-600">
-                  {getClassIcon(characterData.mainClass)}
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl shadow-lg border-2 border-slate-600 overflow-hidden">
+                  {characterData.personalDetails?.portraitImage ? (
+                    <img
+                      src={characterData.personalDetails.portraitImage}
+                      alt={`Retrato de ${characterData.personalDetails?.name}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      {getClassIcon(characterData.mainClass)}
+                    </div>
+                  )}
                 </div>
                 <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center text-xs sm:text-sm font-bold text-white shadow-lg">
                   {characterData.level || 1}
@@ -2247,6 +2260,22 @@ const CharacterSheet: React.FC = () => {
       </div>
 
             <div className="p-6 space-y-4">
+                  {/* Retrato do Personagem */}
+                  {characterData.personalDetails?.portraitImage && (
+                    <div className="flex justify-center mb-6">
+                      <div className="relative">
+                        <img
+                          src={characterData.personalDetails.portraitImage}
+                          alt={`Retrato de ${characterData.personalDetails?.name}`}
+                          className="w-32 h-32 object-cover rounded-xl border-4 border-blue-200 shadow-lg"
+                        />
+                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center text-sm font-bold text-white shadow-lg">
+                          {characterData.level || 1}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Informações Básicas */}
                   <div className="grid grid-cols-1 gap-4">
                     {/* Linhagem e Origem */}

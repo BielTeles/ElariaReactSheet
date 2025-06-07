@@ -172,6 +172,7 @@ export interface CharacterCreation {
     appearance?: string;
     personality?: string;
     background?: string;
+    portraitImage?: string; // Base64 encoded image data
   };
   
   // Estatísticas Finais (calculadas na finalização)

@@ -244,7 +244,7 @@ const WizardContainer: React.FC = () => {
         {/* Progress bar */}
         <div className="w-full bg-slate-200 rounded-full h-2">
           <div
-            className="bg-gradient-to-r from-agua-500 to-natureza-500 h-2 rounded-full transition-all duration-500"
+                            className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
             style={{ width: `${(currentStep / steps.length) * 100}%` }}
           ></div>
         </div>

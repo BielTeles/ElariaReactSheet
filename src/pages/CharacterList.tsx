@@ -7,8 +7,8 @@ import SaveSettings from '../components/SaveSettings';
 import SaveIndicator from '../components/SaveIndicator';
 import { 
   Plus, User, Calendar, Eye, Trash2, Copy, Download, Upload, 
-  BarChart3, Sparkles, Heart, Zap, Flame, Crown, Star,
-  Search, Filter, MoreVertical, FileText, Save, Settings
+  BarChart3, Sparkles, Heart, Zap, Flame, Star,
+  Search, MoreVertical, FileText, Save, Settings
 } from 'lucide-react';
 
 const CharacterList: React.FC = () => {
@@ -408,8 +408,18 @@ const CharacterList: React.FC = () => {
                 <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                        {getClassIcon(character.data.mainClass)}
+                      <div className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white border-opacity-30">
+                        {character.data.personalDetails?.portraitImage ? (
+                          <img
+                            src={character.data.personalDetails.portraitImage}
+                            alt={`Retrato de ${character.name}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-white bg-opacity-20 flex items-center justify-center">
+                            {getClassIcon(character.data.mainClass)}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <h3 className="font-bold text-lg">{character.name}</h3>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CharacterCreation } from '../../../types/character';
 import { classes } from '../../../data/classes';
 import { races } from '../../../data/races';
@@ -273,12 +273,12 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
   const trainedSkills = getTrainedSkills();
 
   // Calcular valor final de cada perícia
-  const getFinalSkillValue = (skillName: string): number => {
+  const getFinalSkillValue = useCallback((skillName: string): number => {
     const isTrained = trainedSkills.includes(skillName);
     const baseValue = isTrained ? 1 : 0; // Perícias treinadas começam com 1
     const boughtValue = skillValues[skillName] || 0;
     return baseValue + boughtValue;
-  };
+  }, [trainedSkills, skillValues]);
 
   // Calcular pontos gastos
   useEffect(() => {
@@ -304,7 +304,7 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
         Object.keys(allSkills).map(skill => [skill, getFinalSkillValue(skill)])
       )
     });
-  }, [selectedClassSkills, selectedRaceSkills, skillValues]);
+  }, [selectedClassSkills, selectedRaceSkills, skillValues, data, getFinalSkillValue, onUpdate]);
 
   const toggleClassSkill = (skill: string) => {
     if (selectedClassSkills.includes(skill)) {

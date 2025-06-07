@@ -180,7 +180,7 @@ const AttributesStep: React.FC<AttributesStepProps> = ({ data, onUpdate, onNext,
       </div>
 
       {/* Points summary */}
-      <div className="card bg-gradient-to-r from-agua-50 to-natureza-50">
+                  <div className="card bg-gradient-to-r from-blue-50 to-green-50">
         <div className="flex justify-between items-center">
           <div>
             <h4 className="font-semibold text-slate-800">Pontos Disponíveis</h4>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CharacterCreation } from '../../../types/character';
 import { User, FileText, Smile, BookOpen } from 'lucide-react';
+import ImageUpload from '../../ui/ImageUpload';
 
 interface PersonalDetailsStepProps {
   data: CharacterCreation;
@@ -14,6 +15,15 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({ data, onUpdat
 
   const handleChange = (field: string, value: string) => {
     const newDetails = { ...details, [field]: value };
+    setDetails(newDetails);
+    onUpdate({
+      ...data,
+      personalDetails: newDetails
+    });
+  };
+
+  const handleImageChange = (imageData: string | null) => {
+    const newDetails = { ...details, portraitImage: imageData || undefined };
     setDetails(newDetails);
     onUpdate({
       ...data,
@@ -35,6 +45,17 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({ data, onUpdat
 
       {/* Formulário */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
+        {/* Upload de Imagem */}
+        <div className="flex justify-center mb-8">
+          <ImageUpload
+            currentImage={details.portraitImage}
+            onImageChange={handleImageChange}
+            size="large"
+            label="Retrato do Personagem"
+            placeholder="Adicionar imagem"
+          />
+        </div>
+        
         <div className="grid md:grid-cols-2 gap-6">
           {/* Nome */}
           <div>

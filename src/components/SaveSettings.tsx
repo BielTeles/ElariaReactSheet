@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CharacterStorage, AutoSaveConfig, CharacterVersion } from '../utils/characterStorage';
 import { 
-  Settings, Save, Clock, History, Download, Upload, Shield, 
+  Settings, Clock, History, Download, Upload, Shield, 
   AlertTriangle, CheckCircle, XCircle, RotateCcw, Trash2 
 } from 'lucide-react';
 
@@ -18,12 +18,6 @@ const SaveSettings: React.FC<SaveSettingsProps> = ({ isOpen, onClose, characterI
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadData();
-    }
-  }, [isOpen, characterId]);
-
   const loadData = () => {
     setConfig(CharacterStorage.getConfig());
     
@@ -34,6 +28,13 @@ const SaveSettings: React.FC<SaveSettingsProps> = ({ isOpen, onClose, characterI
     const stats = CharacterStorage.getStats();
     setLastBackup(stats.lastBackup);
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, characterId]);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });

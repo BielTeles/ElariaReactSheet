@@ -8,7 +8,7 @@ import { deities } from '../../../data/deities';
 import { origins } from '../../../data/origins';
 import { classes, subclassData } from '../../../data/classes';
 import { equipment, initialFreeEquipment } from '../../../data/equipment';
-import { Check, Plus, Coins, Package, Sword, Shield, Heart, Zap, Star, Save, Sparkles } from 'lucide-react';
+import { Check, Plus, Coins, Package, Sword, Shield, Heart, Zap, Star, Save } from 'lucide-react';
 
 interface SummaryStepProps {
   data: CharacterCreation;
@@ -247,7 +247,7 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
       finalAttributes: finalAttributes,
       selectedAttributeBonus: selectedKainBonus
     });
-  }, [data.attributes, data.race, selectedKainBonus]);
+  }, [data, finalAttributes, selectedKainBonus, onUpdate]);
 
   const attributeNames: Record<string, string> = {
     forca: 'Força',
@@ -381,7 +381,6 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
                   {Object.entries(data.attributes || {}).map(([key, baseValue]) => {
                     const finalValue = finalAttributes[key as keyof typeof finalAttributes];
                     const hasBonus = finalValue !== baseValue;
-                    const isChosenAttribute = selectedKainBonus === key;
                     
                     return (
                       <div key={key} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">

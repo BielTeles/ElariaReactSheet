@@ -58,7 +58,7 @@ const RaceStep: React.FC<RaceStepProps> = ({ data, onUpdate, onNext, onPrevious 
 
       {/* Selected race preview */}
       {selectedRace && (
-        <div className="card bg-gradient-to-r from-natureza-50 to-luz-50">
+        <div className="card bg-gradient-to-r from-green-50 to-yellow-50">
           <div className="flex items-center space-x-4">
             <div className={`w-16 h-16 bg-gradient-to-br from-${getElementColor(selectedRace)}-500 to-${getElementColor(selectedRace)}-600 rounded-full flex items-center justify-center`}>
               <Users className="text-white" size={28} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CharacterCreation } from '../../../types/character';
 import { equipment, initialFreeEquipment, rollInitialGold, getDisplayPrice, EquipmentItem } from '../../../data/equipment';
 import { Coins, Package, ShoppingCart, Sword, Shield, Dice6, RefreshCw } from 'lucide-react';

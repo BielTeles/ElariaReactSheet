@@ -9,7 +9,7 @@ const Home: React.FC = () => {
       description: 'Inicie a criação de um novo personagem para Elaria',
       path: '/characters/new',
       icon: Plus,
-      color: 'from-natureza-500 to-natureza-600',
+      color: 'from-green-500 to-green-600',
       textColor: 'text-white'
     },
     {
@@ -17,7 +17,7 @@ const Home: React.FC = () => {
       description: 'Visualize e gerencie seus personagens existentes',
       path: '/characters',
       icon: Users,
-      color: 'from-agua-500 to-agua-600',
+      color: 'from-blue-500 to-blue-600',
       textColor: 'text-white'
     },
     {
@@ -25,7 +25,7 @@ const Home: React.FC = () => {
       description: 'Consulte raças, classes, regras e informações do sistema',
       path: '/reference',
       icon: BookOpen,
-      color: 'from-luz-500 to-luz-600',
+      color: 'from-yellow-500 to-yellow-600',
       textColor: 'text-white'
     }
   ];
@@ -35,25 +35,25 @@ const Home: React.FC = () => {
       name: 'Evocador',
       description: 'Mestres dos elementos',
       icon: Zap,
-      color: 'fogo'
+      color: 'red'
     },
     {
       name: 'Titã',
       description: 'Guerreiros poderosos',
       icon: Shield,
-      color: 'terra'
+      color: 'amber'
     },
     {
       name: 'Sentinela',
       description: 'Observadores especializados',
       icon: Eye,
-      color: 'natureza'
+      color: 'green'
     },
     {
       name: 'Elo',
       description: 'Mestres da conexão',
       icon: Heart,
-      color: 'luz'
+      color: 'blue'
     }
   ];
 

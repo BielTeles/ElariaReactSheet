@@ -1,14 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Brain, 
-  Target, 
-  Users, 
-  Zap, 
-  Sword, 
-  Shield, 
-  Heart, 
-  Eye, 
-  Book,
   Search,
   ChevronUp,
   ChevronDown
@@ -44,19 +36,7 @@ const ExpandedSkillSystem: React.FC<ExpandedSkillSystemProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showTrainedOnly, setShowTrainedOnly] = useState(false);
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'física': return <Target className="w-4 h-4" />;
-      case 'social': return <Users className="w-4 h-4" />;
-      case 'mental': return <Brain className="w-4 h-4" />;
-      case 'mágica': return <Zap className="w-4 h-4" />;
-      case 'combate': return <Sword className="w-4 h-4" />;
-      case 'reação': return <Shield className="w-4 h-4" />;
-      case 'resistência': return <Heart className="w-4 h-4" />;
-      case 'útil': return <Eye className="w-4 h-4" />;
-      default: return <Book className="w-4 h-4" />;
-    }
-  };
+
 
   const getCategoryColor = (category: string) => {
     switch (category) {

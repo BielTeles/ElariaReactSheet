@@ -295,7 +295,7 @@ export class CharacterStorage {
   // Reiniciar todos os auto-saves
   private static restartAllAutoSaves(): void {
     // Parar todos os timers atuais
-    for (const [characterId, timer] of Array.from(this.autoSaveTimers.entries())) {
+    for (const [, timer] of Array.from(this.autoSaveTimers.entries())) {
       clearInterval(timer);
     }
     this.autoSaveTimers.clear();
