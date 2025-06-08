@@ -1,13 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Users, BookOpen, Scroll, Zap, Shield, Eye, Heart } from 'lucide-react';
+import { Plus, Users, BookOpen, Scroll, Zap, Shield, Eye, Heart, LogIn, UserPlus } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { ROUTES } from '../constants';
 
 const Home: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
+
   const quickActions = [
     {
       title: 'Criar Personagem',
       description: 'Inicie a criação de um novo personagem para Elaria',
-      path: '/characters/new',
+      path: ROUTES.CHARACTER_NEW,
       icon: Plus,
       color: 'from-green-500 to-green-600',
       textColor: 'text-white'
@@ -15,7 +19,7 @@ const Home: React.FC = () => {
     {
       title: 'Meus Personagens',
       description: 'Visualize e gerencie seus personagens existentes',
-      path: '/characters',
+      path: ROUTES.CHARACTERS,
       icon: Users,
       color: 'from-blue-500 to-blue-600',
       textColor: 'text-white'
@@ -23,7 +27,7 @@ const Home: React.FC = () => {
     {
       title: 'Guia de Referência',
       description: 'Consulte raças, classes, regras e informações do sistema',
-      path: '/reference',
+      path: ROUTES.REFERENCE,
       icon: BookOpen,
       color: 'from-yellow-500 to-yellow-600',
       textColor: 'text-white'
@@ -57,43 +61,87 @@ const Home: React.FC = () => {
     }
   ];
 
+  const authActions = [
+    {
+      title: 'Fazer Login',
+      description: 'Entre na sua conta para acessar seus personagens',
+      path: ROUTES.LOGIN,
+      icon: LogIn,
+      color: 'from-blue-500 to-blue-600',
+      textColor: 'text-white'
+    },
+    {
+      title: 'Criar Conta',
+      description: 'Registre-se para começar sua jornada em Elaria',
+      path: ROUTES.REGISTER,
+      icon: UserPlus,
+      color: 'from-green-500 to-green-600',
+      textColor: 'text-white'
+    }
+  ];
+
   return (
     <div className="space-y-8">
-      {/* Hero Section - MUDANÇA IMEDIATA VISÍVEL */}
+      {/* Hero Section */}
       <section className="text-center py-12 bg-white rounded-2xl border-4 border-blue-200 shadow-2xl">
         <div className="max-w-4xl mx-auto px-6">
           <h1 className="text-5xl font-fantasy font-bold text-gray-900 mb-4">
-            Bem-vindo ao mundo de{' '}
-            <span className="bg-gradient-to-r from-red-600 to-blue-600 bg-clip-text text-transparent">
-              Elaria
-            </span>
+            {isAuthenticated ? `Bem-vindo de volta, ${user?.username}!` : 'Bem-vindo ao mundo de'}{' '}
+            {!isAuthenticated && (
+              <span className="bg-gradient-to-r from-red-600 to-blue-600 bg-clip-text text-transparent">
+                Elaria
+              </span>
+            )}
           </h1>
           <p className="text-xl text-gray-700 mb-8 leading-relaxed font-medium">
-            Crie e gerencie personagens para o sistema de RPG Elaria, onde os elementos primordiais
-            moldam heróis extraordinários em um mundo de magia e aventura.
+            {isAuthenticated 
+              ? 'Continue sua jornada épica em Elaria. Seus personagens aguardam por novas aventuras!'
+              : 'Crie e gerencie personagens para o sistema de RPG Elaria, onde os elementos primordiais moldam heróis extraordinários em um mundo de magia e aventura.'
+            }
           </p>
           <div className="flex justify-center space-x-4">
-            <Link
-              to="/characters/new"
-              className="bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 rounded-lg font-bold hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-red-800"
-            >
-              Criar Personagem
-            </Link>
-            <Link
-              to="/reference"
-              className="bg-white text-gray-900 px-8 py-4 rounded-lg font-bold border-4 border-gray-400 hover:border-gray-600 hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-            >
-              Explorar Sistema
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  to={ROUTES.CHARACTER_NEW}
+                  className="bg-gradient-to-r from-red-600 to-red-700 text-white px-8 py-4 rounded-lg font-bold hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-red-800"
+                >
+                  Criar Personagem
+                </Link>
+                <Link
+                  to={ROUTES.CHARACTERS}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-lg font-bold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-blue-800"
+                >
+                  Meus Personagens
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to={ROUTES.REGISTER}
+                  className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-4 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1 border-2 border-green-800"
+                >
+                  Criar Conta
+                </Link>
+                <Link
+                  to={ROUTES.REFERENCE}
+                  className="bg-white text-gray-900 px-8 py-4 rounded-lg font-bold border-4 border-gray-400 hover:border-gray-600 hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                >
+                  Explorar Sistema
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Quick Actions - CONTRASTE MÁXIMO */}
+      {/* Quick Actions */}
       <section>
-        <h2 className="text-4xl font-fantasy font-bold text-black mb-6">🎯 Ações Rápidas</h2>
+        <h2 className="text-4xl font-fantasy font-bold text-black mb-6">
+          🎯 {isAuthenticated ? 'Ações Rápidas' : 'Comece Agora'}
+        </h2>
         <div className="grid md:grid-cols-3 gap-6">
-          {quickActions.map((action) => (
+          {(isAuthenticated ? quickActions : [...authActions, quickActions[2]]).map((action) => (
             <Link
               key={action.path}
               to={action.path}
