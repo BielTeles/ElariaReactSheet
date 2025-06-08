@@ -46,7 +46,7 @@ export interface Equipment {
 
 // Interface principal do personagem
 export interface Character {
-  id: string;
+  id?: string; // Tornando opcional para facilitar operações de delete
   name: string;
   age?: number;
   height?: string;
@@ -58,6 +58,10 @@ export interface Character {
   subclass: Subclass;
   origin: Origin;
   deity: Deity;
+  
+  // Propriedades derivadas para facilitar buscas/filtros
+  class?: string; // Alias para mainClass como string
+  element?: string; // Para evocadores, baseado no subclass
   
   // Mecânicas de jogo
   level: number;

@@ -2,12 +2,17 @@
 // APP PRINCIPAL - ELARIA RPG
 // ===================================================================
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { AuthProvider } from './contexts/AuthContext';
+import { FirebaseAuthProvider, useFirebaseAuth } from './contexts/FirebaseAuthContext';
+import { CharacterProvider } from './contexts/CharacterContext';
+import { ToastProvider } from './contexts/ToastContext';
+import { AlertProvider } from './contexts/AlertContext';
 import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
 import Header from './components/Header';
+import { MigrationModal } from './components/MigrationModal';
+import { useMigration } from './hooks/useMigration';
 import { ROUTES } from './constants';
 
 // Lazy loading dos componentes de página
@@ -32,6 +37,44 @@ const LoadingSpinner: React.FC = () => (
     </div>
   </div>
 );
+
+/**
+ * Componente para gerenciar migração
+ */
+const MigrationManager: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useFirebaseAuth();
+  const { checkForLocalData } = useMigration();
+  const [showMigrationModal, setShowMigrationModal] = useState(false);
+  const [migrationChecked, setMigrationChecked] = useState(false);
+
+  useEffect(() => {
+    // Verificar migração apenas quando o usuário estiver autenticado e não estivermos carregando
+    if (isAuthenticated && !isLoading && !migrationChecked) {
+      const hasLocalData = checkForLocalData();
+      if (hasLocalData) {
+        setShowMigrationModal(true);
+      }
+      setMigrationChecked(true);
+    }
+  }, [isAuthenticated, isLoading, migrationChecked, checkForLocalData]);
+
+  const handleMigrationComplete = () => {
+    setShowMigrationModal(false);
+    // Opcionalmente, recarregar a página ou fazer outras ações
+    console.log('Migração concluída com sucesso!');
+  };
+
+  return (
+    <>
+      {children}
+      <MigrationModal
+        isOpen={showMigrationModal}
+        onClose={() => setShowMigrationModal(false)}
+        onMigrationComplete={handleMigrationComplete}
+      />
+    </>
+  );
+};
 
 /**
  * Componente de conteúdo da aplicação
@@ -142,10 +185,21 @@ function App() {
         console.error('Component stack:', errorInfo.componentStack);
       }}
     >
-      <Router>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
+      <Router future={{ 
+        v7_startTransition: true, 
+        v7_relativeSplatPath: true 
+      }}>
+        <FirebaseAuthProvider>
+          <AlertProvider>
+            <ToastProvider>
+              <CharacterProvider>
+                <MigrationManager>
+                  <AppContent />
+                </MigrationManager>
+              </CharacterProvider>
+            </ToastProvider>
+          </AlertProvider>
+        </FirebaseAuthProvider>
       </Router>
     </ErrorBoundary>
   );

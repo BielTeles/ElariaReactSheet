@@ -4,11 +4,11 @@
 
 import React, { useState } from 'react';
 import { User, Settings, Calendar, Clock, Save, LogOut } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 import { UserPreferences } from '../types/auth';
 
 export default function Profile() {
-  const { user, logout, updateProfile } = useAuth();
+  const { user, logout, updateProfile } = useFirebaseAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState({

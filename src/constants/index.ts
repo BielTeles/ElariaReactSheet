@@ -251,4 +251,27 @@ export const AUTH_SUCCESS_MESSAGES = {
   REGISTER_SUCCESS: 'Conta criada com sucesso',
   LOGOUT_SUCCESS: 'Logout realizado com sucesso',
   PROFILE_UPDATED: 'Perfil atualizado com sucesso',
+} as const;
+
+/**
+ * Configurações de migração de dados
+ */
+export const MIGRATION_CONFIG = {
+  BATCH_SIZE: 10,
+  DELAY_BETWEEN_REQUESTS: 100, // ms
+  MAX_RETRIES: 3,
+  TIMEOUT: 30000, // 30 segundos
+} as const;
+
+/**
+ * Mensagens de migração
+ */
+export const MIGRATION_MESSAGES = {
+  NO_LOCAL_DATA: 'Nenhum dado local encontrado para migrar',
+  MIGRATION_SUCCESS: 'Migração concluída com sucesso',
+  MIGRATION_PARTIAL: 'Migração parcialmente concluída',
+  MIGRATION_FAILED: 'Falha na migração',
+  BACKUP_CREATED: 'Backup criado com sucesso',
+  BACKUP_FAILED: 'Falha ao criar backup',
+  DATA_CLEARED: 'Dados locais removidos após migração',
 } as const; 

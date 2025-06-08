@@ -5,14 +5,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { useAlert } from '../contexts/AlertContext';
 import { LoginCredentials } from '../types/auth';
 import { ROUTES, AUTH_SUCCESS_MESSAGES } from '../constants';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, error, isLoading, clearError } = useAuth();
+  const { login, error, isLoading, clearError } = useFirebaseAuth();
+  const { showSuccess, showError } = useToast();
+  const { showError: showAlertError } = useAlert();
 
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
@@ -75,9 +79,45 @@ export default function Login() {
     const success = await login(credentials);
     
     if (success) {
-      // Opcional: mostrar mensagem de sucesso
-      console.log(AUTH_SUCCESS_MESSAGES.LOGIN_SUCCESS);
+      showSuccess(
+        'Login realizado com sucesso!', 
+        'Bem-vindo de volta ao Elaria RPG!'
+      );
       navigate(from, { replace: true });
+    } else if (error) {
+      // Usar AlertModal para casos críticos
+      if (error.includes('Usuário não encontrado') || error.includes('user-not-found')) {
+        showAlertError(
+          '👤 Usuário não encontrado',
+          'Não encontramos uma conta com este email. Verifique o email ou crie uma nova conta.',
+          {
+            text: 'Criar Conta',
+            onClick: () => {
+              navigate(ROUTES.REGISTER);
+            },
+            variant: 'primary'
+          }
+        );
+      } else if (error.includes('Credenciais inválidas') || error.includes('wrong-password') || error.includes('invalid-credential')) {
+        showAlertError(
+          '🔒 Credenciais inválidas',
+          'Email ou senha incorretos. Verifique suas informações e tente novamente.',
+          {
+            text: 'Esqueci minha senha',
+            onClick: () => {
+              // TODO: Implementar reset de senha
+              showError('Reset de senha', 'Funcionalidade em desenvolvimento');
+            },
+            variant: 'secondary'
+          }
+        );
+      } else {
+        // Toast para outros erros
+        showError(
+          'Erro ao fazer login',
+          error
+        );
+      }
     }
   };
 

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 import { ROUTES } from '../constants';
 
 interface ProtectedRouteProps {
@@ -19,7 +19,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   redirectTo = ROUTES.LOGIN 
 }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useFirebaseAuth();
   const location = useLocation();
 
   // Mostrar loading enquanto verifica autenticação
@@ -54,7 +54,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
   children, 
   redirectTo = ROUTES.HOME 
 }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useFirebaseAuth();
 
   // Mostrar loading enquanto verifica autenticação
   if (isLoading) {

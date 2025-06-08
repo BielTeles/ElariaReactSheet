@@ -1,0 +1,79 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Regras para usuários
+    match /users/{userId} {
+      // Usuários podem ler e escrever apenas seus próprios dados
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Permitir criação se o UID do usuário coincidir
+      allow create: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Permitir consultas à coleção users para verificação de username
+    // (necessário para registro e validação)
+    match /users/{document} {
+      allow read: if true; // Temporariamente permitir leitura para verificação de username
+    }
+    
+    // Regras para personagens
+    match /characters/{characterId} {
+      // Permitir leitura se:
+      // 1. O usuário é o proprietário do personagem, OU
+      // 2. O personagem é público (isPublic = true)
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.isPublic == true
+      );
+      
+      // Permitir escrita apenas se o usuário é o proprietário
+      allow write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      
+      // Permitir criação apenas se o usuário autenticado é o proprietário
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Permitir exclusão apenas se o usuário é o proprietário
+      allow delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Regras para logs de atividade
+    match /activityLogs/{logId} {
+      // Usuários podem ler apenas seus próprios logs
+      allow read: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      
+      // Apenas o sistema pode criar logs (através de Cloud Functions)
+      // Para desenvolvimento, permitimos criação pelo usuário
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Logs não podem ser modificados ou excluídos
+      allow update, delete: if false;
+    }
+    
+    // Regras para campanhas (futuro)
+    match /campaigns/{campaignId} {
+      // Permitir leitura se o usuário é proprietário da campanha
+      allow read: if request.auth != null && 
+        resource.data.ownerId == request.auth.uid;
+      
+      // Apenas o proprietário pode escrever
+      allow write: if request.auth != null && 
+        resource.data.ownerId == request.auth.uid;
+      
+      // Permitir criação se o usuário autenticado é o proprietário
+      allow create: if request.auth != null && 
+        request.resource.data.ownerId == request.auth.uid;
+    }
+    
+    // Negar acesso a qualquer outra coleção por padrão
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

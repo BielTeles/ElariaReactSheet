@@ -6,7 +6,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BookOpen, Users, Home, Menu, User, LogOut, LogIn, UserPlus, ChevronDown } from 'lucide-react';
 import { ROUTES } from '../constants';
-import { useAuth } from '../contexts/AuthContext';
+import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 
 /**
  * Item de navegação
@@ -24,7 +24,7 @@ interface NavItem {
 const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useFirebaseAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 

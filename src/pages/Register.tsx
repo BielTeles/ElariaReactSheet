@@ -5,13 +5,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { useAlert } from '../contexts/AlertContext';
 import { RegisterCredentials } from '../types/auth';
 import { ROUTES, AUTH_SUCCESS_MESSAGES, AUTH_CONFIG } from '../constants';
 
 export default function Register() {
   const navigate = useNavigate();
-  const { register, error, isLoading, clearError } = useAuth();
+  const { registerDetailed, error, isLoading, clearError } = useFirebaseAuth();
+  const { showSuccess, showError } = useToast();
+  const { showError: showAlertError } = useAlert();
 
   const [credentials, setCredentials] = useState<RegisterCredentials>({
     username: '',
@@ -104,15 +108,59 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🔥 [REGISTER] Iniciando processo de registro...');
+    console.log('📝 [REGISTER] Credenciais:', { ...credentials, password: '***', confirmPassword: '***' });
+    
     if (!validateForm()) {
+      console.log('❌ [REGISTER] Validação do formulário falhou');
       return;
     }
 
-    const success = await register(credentials);
-    
-    if (success) {
-      console.log(AUTH_SUCCESS_MESSAGES.REGISTER_SUCCESS);
-      navigate(ROUTES.HOME);
+    console.log('✅ [REGISTER] Validação do formulário passou');
+    console.log('🚀 [REGISTER] Chamando registerDetailed...');
+
+    try {
+      const result = await registerDetailed(credentials);
+      console.log('📊 [REGISTER] Resultado do register:', result);
+      
+      if (result.success) {
+        console.log('✅ [REGISTER] Sucesso! Mostrando toast...');
+        showSuccess(
+          'Conta criada com sucesso!', 
+          'Bem-vindo ao Elaria RPG! Você já pode começar a criar seus personagens.'
+        );
+        console.log('🏠 [REGISTER] Navegando para home...');
+        navigate(ROUTES.HOME);
+      } else {
+        const errorMessage = result.error || 'Erro desconhecido';
+        console.log('❌ [REGISTER] Erro encontrado:', errorMessage);
+        
+        // Usar AlertModal para casos críticos como email já registrado
+        if (errorMessage.includes('email já está em uso') || errorMessage.includes('email-already-in-use')) {
+          console.log('📧 [REGISTER] Mostrando modal de email duplicado');
+          showAlertError(
+            '📧 Email já registrado',
+            'Este email já possui uma conta no Elaria RPG. Você pode fazer login ou tentar com outro email.',
+            {
+              text: 'Ir para Login',
+              onClick: () => {
+                navigate(ROUTES.LOGIN);
+              },
+              variant: 'primary'
+            }
+          );
+        } else {
+          console.log('🍞 [REGISTER] Mostrando toast de erro');
+          // Toast para outros erros
+          showError(
+            'Erro ao criar conta',
+            errorMessage
+          );
+        }
+      }
+    } catch (err) {
+      console.error('💥 [REGISTER] Erro não capturado:', err);
+      showError('Erro inesperado', 'Ocorreu um erro inesperado. Tente novamente.');
     }
   };
 

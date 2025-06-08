@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Users, BookOpen, Scroll, Zap, Shield, Eye, Heart, LogIn, UserPlus } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 import { ROUTES } from '../constants';
 
 const Home: React.FC = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user } = useFirebaseAuth();
 
   const quickActions = [
     {
