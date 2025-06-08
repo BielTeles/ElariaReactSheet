@@ -23,6 +23,108 @@ export const useMigration = () => {
   const { firebaseUser } = useFirebaseAuth();
 
   /**
+   * Converte personagem do localStorage para formato do Firebase
+   */
+  const convertLocalCharacterToFirebase = useCallback((localCharacter: any): Character => {
+    const baseName = localCharacter.personalDetails?.name || localCharacter.name || 'Personagem Migrado';
+    const baseHitPoints = localCharacter.hitPoints || 8;
+    const baseManaPoints = localCharacter.manaPoints || 0;
+    
+    // Se já é um Character válido (formato novo), adaptar estrutura
+    if (localCharacter.personalDetails && localCharacter.mainClass) {
+      return {
+        name: baseName,
+        age: localCharacter.personalDetails?.age,
+        height: localCharacter.personalDetails?.height,
+        race: localCharacter.race || 'alari',
+        mainClass: localCharacter.mainClass || 'evocador',
+        subclass: localCharacter.subclass || 'terra',
+        origin: localCharacter.origin || 'sobrevivente-brasas',
+        deity: localCharacter.deity || null,
+        
+        // Atributos
+        attributes: localCharacter.attributes || localCharacter.finalAttributes || {
+          forca: 0,
+          destreza: 0,
+          constituicao: 0,
+          inteligencia: 0,
+          sabedoria: 0,
+          carisma: 0
+        },
+        
+        // Recursos e combate (formato correto)
+        hitPoints: {
+          current: typeof baseHitPoints === 'number' ? baseHitPoints : baseHitPoints.current || 8,
+          maximum: typeof baseHitPoints === 'number' ? baseHitPoints : baseHitPoints.maximum || 8
+        },
+        manaPoints: {
+          current: typeof baseManaPoints === 'number' ? baseManaPoints : baseManaPoints.current || 0,
+          maximum: typeof baseManaPoints === 'number' ? baseManaPoints : baseManaPoints.maximum || 0
+        },
+        vigor: {
+          current: 1,
+          maximum: 1
+        },
+        
+        // Perícias e habilidades
+        skills: localCharacter.skills || {},
+        abilities: localCharacter.abilities || [],
+        
+        // Equipamentos e inventário
+        equipment: localCharacter.selectedEquipments || localCharacter.equipment || [],
+        gold: localCharacter.remainingGold || localCharacter.money || localCharacter.gold || 150,
+        
+        // Metadados
+        level: localCharacter.level || 1,
+        backstory: localCharacter.personalDetails?.background,
+        notes: localCharacter.personalDetails?.description,
+        createdAt: localCharacter.createdAt ? new Date(localCharacter.createdAt) : new Date(),
+        updatedAt: new Date()
+      };
+    }
+    
+    // Se é um formato antigo/diferente (CharacterStorage), tentar converter
+    return {
+      name: localCharacter.name || 'Personagem Migrado',
+      race: localCharacter.data?.race || localCharacter.race || 'alari',
+      mainClass: localCharacter.data?.mainClass || localCharacter.mainClass || 'evocador',
+      subclass: localCharacter.data?.subclass || localCharacter.subclass || 'terra',
+      origin: localCharacter.data?.origin || 'sobrevivente-brasas',
+      deity: localCharacter.data?.deity || null,
+      
+      attributes: localCharacter.data?.finalAttributes || localCharacter.data?.attributes || {
+        forca: 0,
+        destreza: 0,
+        constituicao: 0,
+        inteligencia: 0,
+        sabedoria: 0,
+        carisma: 0
+      },
+      
+      hitPoints: {
+        current: 8,
+        maximum: 8
+      },
+      manaPoints: {
+        current: 0,
+        maximum: 0
+      },
+      vigor: {
+        current: 1,
+        maximum: 1
+      },
+      
+      skills: {},
+      abilities: [],
+      equipment: [],
+      gold: 150,
+      level: 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  }, []);
+
+  /**
    * Verifica se existem dados no localStorage para migrar
    */
   const checkForLocalData = useCallback((): boolean => {
@@ -92,14 +194,20 @@ export const useMigration = () => {
         });
 
         try {
-          // Limpar ID local (será gerado um novo no Firebase)
-          const { id, ...cleanCharacter } = character;
-
-          await CharacterService.createCharacter(cleanCharacter, firebaseUser.uid);
+          console.log(`🔄 [Migration] Tentando migrar personagem:`, character.name || 'Sem nome');
+          console.log(`📋 [Migration] Dados originais:`, character);
+          
+          // Converter dados do localStorage para formato esperado pelo CharacterService
+          const convertedCharacter = convertLocalCharacterToFirebase(character);
+          console.log(`✅ [Migration] Dados convertidos:`, convertedCharacter);
+          
+          await CharacterService.createCharacter(convertedCharacter, firebaseUser.uid);
+          console.log(`🎉 [Migration] Personagem migrado com sucesso:`, convertedCharacter.name);
           success++;
         } catch (error: any) {
-          console.error(`Erro ao migrar personagem ${character.name}:`, error);
-          errors.push(`${character.name}: ${error.message}`);
+          console.error(`💥 [Migration] Erro ao migrar personagem ${character.name || 'Sem nome'}:`, error);
+          console.error(`📋 [Migration] Stack trace:`, error.stack);
+          errors.push(`${character.name || 'Sem nome'}: ${error.message}`);
           failed++;
         }
 

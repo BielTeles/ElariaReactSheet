@@ -241,13 +241,33 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
   const isKainNeedsChoice = isKain && !selectedKainBonus;
 
   // Atualizar dados do personagem com atributos finais e escolha de Kain
+  const prevFinalAttributesRef = React.useRef<any>(null);
+  const prevSelectedKainBonusRef = React.useRef<string | null>(null);
+  
   React.useEffect(() => {
-    onUpdate({
-      ...data,
-      finalAttributes: finalAttributes,
-      selectedAttributeBonus: selectedKainBonus
-    });
-  }, [data, finalAttributes, selectedKainBonus, onUpdate]);
+    // Verificar se realmente houve mudanças para evitar loops infinitos
+    const finalAttributesChanged = JSON.stringify(prevFinalAttributesRef.current) !== JSON.stringify(finalAttributes);
+    const kainBonusChanged = prevSelectedKainBonusRef.current !== selectedKainBonus;
+    
+    if (finalAttributesChanged || kainBonusChanged) {
+      // Atualizar referências
+      prevFinalAttributesRef.current = finalAttributes;
+      prevSelectedKainBonusRef.current = selectedKainBonus;
+      
+      // Só atualizar se realmente houver mudanças nos dados
+      const needsUpdate = 
+        JSON.stringify(data.finalAttributes) !== JSON.stringify(finalAttributes) ||
+        data.selectedAttributeBonus !== selectedKainBonus;
+      
+      if (needsUpdate) {
+        onUpdate({
+          ...data,
+          finalAttributes: finalAttributes,
+          selectedAttributeBonus: selectedKainBonus
+        });
+      }
+    }
+  }, [finalAttributes, selectedKainBonus]); // Mantendo apenas as dependências essenciais
 
   const attributeNames: Record<string, string> = {
     forca: 'Força',

@@ -47,22 +47,34 @@ const DEFAULT_CONFIG: AutoSaveConfig = {
 
 export class CharacterStorage {
   private static autoSaveTimers: Map<string, NodeJS.Timeout> = new Map();
+  private static savingInProgress = new Set<string>();
   
   // Salvar personagem
   static saveCharacter(characterData: CharacterCreation, characterState: CharacterState, reason?: string): SavedCharacter {
+    // Gerar ID único se não existir
+    const rawName = characterData.personalDetails?.name || 'Personagem';
+    const sanitizedName = sanitizeString(rawName);
+    const id = this.generateId(sanitizedName);
+    
+    // Evitar múltiplos salvamentos simultâneos do mesmo personagem
+    if (this.savingInProgress.has(id)) {
+      console.log(`⚠️ Salvamento já em progresso para personagem ${id}, ignorando...`);
+      // Retornar personagem existente se disponível
+      const existing = this.loadCharacter(id);
+      if (existing) return existing;
+      // Se não existir, continuar com o salvamento
+    }
+    
     try {
-    // Validar dados antes de salvar
+      this.savingInProgress.add(id);
+      
+      // Validar dados antes de salvar
       const validation = this.validateCharacterData(characterData, characterState);
       if (!validation.isValid) {
         throw new Error(`Dados inválidos: ${validation.errors.join(', ')}`);
       }
     
-    const characters = this.getAllCharacters();
-    
-    // Gerar ID único se não existir
-      const rawName = characterData.personalDetails?.name || 'Personagem';
-      const sanitizedName = sanitizeString(rawName);
-      const id = this.generateId(sanitizedName);
+      const characters = this.getAllCharacters();
     
     const savedCharacter: SavedCharacter = {
       id,
@@ -94,10 +106,12 @@ export class CharacterStorage {
     this.createBackup();
     
       console.log(SUCCESS_MESSAGES.CHARACTER_SAVED, savedCharacter.name);
-    return savedCharacter;
+      return savedCharacter;
     } catch (error) {
       console.error(ERROR_MESSAGES.SAVE_FAILED, error);
       throw error;
+    } finally {
+      this.savingInProgress.delete(id);
     }
   }
 

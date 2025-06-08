@@ -54,8 +54,15 @@ export class CharacterService {
         tags: this.generateAutoTags(character)
       };
 
-      // Remover campos que não devem ir para o banco
-      const { id, createdAt: originalCreatedAt, updatedAt: originalUpdatedAt, ...cleanData } = characterData as any;
+      // Remover campos que não devem ir para o banco e garantir que não há undefined
+      const { id, createdAt: originalCreatedAt, updatedAt: originalUpdatedAt, ...rawData } = characterData as any;
+      
+      // Filtrar campos undefined para evitar erro do Firestore
+      const cleanData = Object.fromEntries(
+        Object.entries(rawData).filter(([_, value]) => value !== undefined)
+      );
+      
+      console.log('🔥 [CharacterService] Dados finais para Firestore:', cleanData);
 
       const characterRef = doc(collection(db, 'characters'));
       const characterId = characterRef.id;
