@@ -39,12 +39,7 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
     description: 'Entreter uma audiência com música, dança, oratória, teatro, etc. Também usada para disfarces convincentes.',
     category: 'social'
   },
-  'Bloqueio': { 
-    name: 'Bloqueio', 
-    attribute: 'constituição', 
-    description: 'Perícia de Reação para aparar ou bloquear ativamente ataques corpo a corpo ou à distância com escudo.',
-    category: 'reação'
-  },
+
   'Cavalgar': { 
     name: 'Cavalgar', 
     attribute: 'destreza', 
@@ -57,12 +52,7 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
     description: 'Saber geral e específico sobre o mundo. Escolha uma especialização (Arcano, História, Natureza, Religião, etc.)',
     category: 'mental'
   },
-  'Corpo-a-Corpo': { 
-    name: 'Corpo-a-Corpo', 
-    attribute: 'força/destreza', 
-    description: 'Realizar ataques corpo-a-corpo armado com armas de curta distância ou de mãos vazias.',
-    category: 'combate'
-  },
+
   'Cura': { 
     name: 'Cura', 
     attribute: 'sabedoria', 
@@ -75,24 +65,14 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
     description: 'Interagir socialmente de forma positiva, negociar, persuadir, fazer amigos e influenciar pessoas com boa vontade.',
     category: 'social'
   },
-  'Elemental': { 
-    name: 'Elemental', 
-    attribute: 'inteligência/sabedoria', 
-    description: 'Utilizado para realizar ataques de magia elemental.',
-    category: 'mágica'
-  },
+
   'Enganação': { 
     name: 'Enganação', 
     attribute: 'carisma', 
     description: 'Mentir convincentemente, blefar, disfarçar intenções ou aparência (complementa Atuação para disfarces).',
     category: 'social'
   },
-  'Esquiva': { 
-    name: 'Esquiva', 
-    attribute: 'destreza', 
-    description: 'Perícia de Reação para se esquivar ativamente de ataques através de movimento ágil. Não pode ser usada com armadura pesada.',
-    category: 'reação'
-  },
+
   'Fortitude': { 
     name: 'Fortitude', 
     attribute: 'constituição', 
@@ -165,12 +145,7 @@ const allSkills: Record<string, { name: string; attribute: string; description: 
     description: 'Usar os sentidos (visão, audição, olfato) para notar detalhes no ambiente, avistar inimigos escondidos, ouvir conversas distantes.',
     category: 'mental'
   },
-  'Pontaria': { 
-    name: 'Pontaria', 
-    attribute: 'destreza', 
-    description: 'Habilidade de mirar e acertar alvos com precisão com ataques à distância (arcos, bestas, armas de arremesso).',
-    category: 'combate'
-  },
+
   'Reflexos': { 
     name: 'Reflexos', 
     attribute: 'destreza', 
@@ -261,37 +236,59 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
   const deitySkills = getDeitySkill();
   const isKain = data.race === 'kain';
 
+  // Calcular bônus de perícias por fonte (contando duplicatas)
+  const getSkillSourceCount = (skillName: string): number => {
+    let count = 0;
+    
+    // Perícias de classe selecionadas
+    if (selectedClassSkills.includes(skillName)) count++;
+    
+    // Perícias de raça
+    if (raceSkills.includes(skillName)) count++;
+    
+    // Perícias de origem
+    if (originSkills.includes(skillName)) count++;
+    
+    // Perícias de patrono
+    if (deitySkills.includes(skillName)) count++;
+    
+    // Perícias raciais Kain (se aplicável)
+    if (isKain && selectedRaceSkills.includes(skillName)) count++;
+    
+    return count;
+  };
+
   // Calcular perícias treinadas (que começam com valor 1)
   const getTrainedSkills = (): string[] => {
     const trained = [...selectedClassSkills, ...raceSkills, ...originSkills, ...deitySkills];
     if (isKain) {
       trained.push(...selectedRaceSkills);
     }
-    return trained;
+    return Array.from(new Set(trained)); // Remove duplicatas para lista
   };
 
   const trainedSkills = getTrainedSkills();
 
-  // Calcular valor final de cada perícia
+  // Calcular valor final de cada perícia (NOVA REGRA: duplicatas somam!)
   const getFinalSkillValue = useCallback((skillName: string): number => {
-    const isTrained = trainedSkills.includes(skillName);
-    const baseValue = isTrained ? 1 : 0; // Perícias treinadas começam com 1
+    const sourceCount = getSkillSourceCount(skillName);
+    const baseValue = sourceCount; // Cada fonte adiciona +1 (duplicatas somam!)
     const boughtValue = skillValues[skillName] || 0;
     return baseValue + boughtValue;
-  }, [trainedSkills, skillValues]);
+  }, [selectedClassSkills, raceSkills, originSkills, deitySkills, selectedRaceSkills, isKain, skillValues]);
 
   // Calcular pontos gastos
   useEffect(() => {
     let total = 0;
     Object.entries(skillValues).forEach(([skillName, boughtValue]) => {
       if (boughtValue > 0) {
-        const isTrained = trainedSkills.includes(skillName);
-        const startValue = isTrained ? 1 : 0;
+        const baseFromSources = getSkillSourceCount(skillName);
+        const startValue = baseFromSources; // Começa do valor das fontes
         total += getSkillPointCost(startValue, startValue + boughtValue);
       }
     });
     setSpentPoints(total);
-  }, [skillValues, trainedSkills]);
+  }, [skillValues, selectedClassSkills, raceSkills, originSkills, deitySkills, selectedRaceSkills, isKain]);
 
   // Atualizar dados do personagem
   useEffect(() => {
@@ -325,12 +322,11 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
   const canIncreaseSkill = (skillName: string): boolean => {
     const currentFinalValue = getFinalSkillValue(skillName);
     const currentBoughtValue = skillValues[skillName] || 0;
-    const isTrained = trainedSkills.includes(skillName);
-    const startValue = isTrained ? 1 : 0;
+    const baseFromSources = getSkillSourceCount(skillName);
     
     if (currentFinalValue >= 20) return false; // Máximo de 20
     
-    const costToIncrease = getSkillPointCost(startValue + currentBoughtValue, startValue + currentBoughtValue + 1);
+    const costToIncrease = getSkillPointCost(baseFromSources + currentBoughtValue, baseFromSources + currentBoughtValue + 1);
     return spentPoints + costToIncrease <= maxPoints;
   };
 
@@ -694,10 +690,12 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
           <div className="flex items-start gap-3">
             <span className="text-yellow-600 text-xl">💡</span>
             <div>
-              <h5 className="font-semibold text-yellow-800 mb-2">Regra dos 10 Pontos:</h5>
+              <h5 className="font-semibold text-yellow-800 mb-2">Regras das Perícias Gerais:</h5>
               <div className="text-yellow-700 text-sm space-y-1">
                 <p>• <strong>Perícias Treinadas:</strong> Começam com Valor 1 (gratuito) - mostradas acima</p>
+                <p>• <strong>Duplicatas Somam:</strong> Se uma perícia vem de múltiplas fontes (classe + origem + patrono), cada fonte adiciona +1 ao valor base</p>
                 <p>• <strong>10 Pontos Livres:</strong> Podem ser gastos em QUALQUER perícia (treinada ou não)</p>
+                <p>• <strong>Perícias de Combate:</strong> Bloqueio, Esquiva, Corpo-a-Corpo, Elemental e Pontaria são gerenciadas em passo separado</p>
                 <p>• <strong>Custos:</strong> Valores 1-4: 1 ponto cada | Valores 5-9: 3 pontos cada | Valor 10+: 6 pontos cada</p>
               </div>
             </div>
@@ -707,16 +705,22 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Object.entries(allSkills).map(([skillName, skill]) => {
             const isTrained = trainedSkills.includes(skillName);
+            const sourceCount = getSkillSourceCount(skillName);
             const boughtValue = skillValues[skillName] || 0;
             const finalValue = getFinalSkillValue(skillName);
             const canIncrease = canIncreaseSkill(skillName);
             const canDecrease = canDecreaseSkill(skillName);
+            const hasMultipleSources = sourceCount > 1;
             
             return (
               <div
                 key={skillName}
                 className={`bg-white rounded-lg border-2 p-4 ${
-                  isTrained ? 'border-green-300 bg-green-50' : 'border-gray-200'
+                  hasMultipleSources 
+                    ? 'border-blue-400 bg-blue-50' 
+                    : isTrained 
+                    ? 'border-green-300 bg-green-50' 
+                    : 'border-gray-200'
                 }`}
               >
                 <div className="flex items-start gap-3 mb-3">
@@ -731,7 +735,12 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h5 className="font-bold text-slate-800">{skill.name}</h5>
-                      {isTrained && (
+                      {hasMultipleSources && (
+                        <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                          Múltiplas Fontes
+                        </span>
+                      )}
+                      {isTrained && !hasMultipleSources && (
                         <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
                           Treinada
                         </span>
@@ -750,7 +759,16 @@ const SkillsStep: React.FC<SkillsStepProps> = ({ data, onUpdate, onNext, onPrevi
                 
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-600">
-                    {isTrained ? `Base: 1 + Comprados: ${boughtValue}` : `Comprados: ${boughtValue}`}
+                    {(() => {
+                      const sourceCount = getSkillSourceCount(skillName);
+                      if (sourceCount > 1) {
+                        return `Base: ${sourceCount} (múltiplas fontes) + Comprados: ${boughtValue}`;
+                      } else if (sourceCount === 1) {
+                        return `Base: 1 + Comprados: ${boughtValue}`;
+                      } else {
+                        return `Comprados: ${boughtValue}`;
+                      }
+                    })()}
                   </div>
                   
                   <div className="flex items-center gap-2">

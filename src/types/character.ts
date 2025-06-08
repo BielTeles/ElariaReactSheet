@@ -162,6 +162,10 @@ export interface CharacterCreation {
   skillValues?: Record<string, number>;
   finalSkillValues?: Record<string, number>;
   
+  // Perícias de Combate (separadas)
+  combatSkillValues?: Record<string, number>;
+  finalCombatSkillValues?: Record<string, number>;
+  
   // Habilidades da Subclasse
   selectedSubclassAbilities?: string[];
   

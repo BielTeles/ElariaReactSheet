@@ -36,9 +36,9 @@ export const classes: Record<string, ClassData> = {
       'Atletismo',
       'Fortitude',
       'Intimidação',
-      'Corpo-a-Corpo',
       'Percepção',
-      'Sobrevivência'
+      'Sobrevivência',
+      'Guerra'
     ],
     subclasses: ['baluarte', 'furia-primal', 'quebra-montanhas']
   },

@@ -11,6 +11,7 @@ import SubclassAbilitiesStep from './steps/SubclassAbilitiesStep';
 import OriginStep from './steps/OriginStep';
 import DeityStep from './steps/DeityStep';
 import SkillsStep from './steps/SkillsStep';
+import CombatSkillsStep from './steps/CombatSkillsStep';
 import EquipmentStep from './steps/EquipmentStep';
 import PersonalDetailsStep from './steps/PersonalDetailsStep';
 import SummaryStep from './steps/SummaryStep';
@@ -32,9 +33,10 @@ const WizardContainer: React.FC = () => {
     { id: 6, name: 'Origem', component: OriginStep },
     { id: 7, name: 'Divindade', component: DeityStep },
     { id: 8, name: 'Perícias', component: SkillsStep },
-    { id: 9, name: 'Equipamento', component: EquipmentStep },
-    { id: 10, name: 'Detalhes', component: PersonalDetailsStep },
-    { id: 11, name: 'Resumo', component: SummaryStep }
+    { id: 9, name: 'Combate', component: CombatSkillsStep },
+    { id: 10, name: 'Equipamento', component: EquipmentStep },
+    { id: 11, name: 'Detalhes', component: PersonalDetailsStep },
+    { id: 12, name: 'Resumo', component: SummaryStep }
   ];
 
   const getCurrentStepComponent = () => {

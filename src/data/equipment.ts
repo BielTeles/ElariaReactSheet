@@ -164,6 +164,32 @@ export const equipment: Record<string, EquipmentItem> = {
     description: 'O arco preferido de arqueiros experientes, oferece precisão e alcance superiores.'
   },
 
+  // ESCUDOS
+  'escudo-leve': {
+    id: 'escudo-leve',
+    name: 'Escudo Leve',
+    category: 'armor',
+    subcategory: 'shield',
+    price: 3,
+    priceUnit: 'Ef',
+    weight: 2.0,
+    armorType: 'Leve',
+    damageReduction: 1,
+    description: 'Um escudo pequeno e ágil, ideal para combate móvel.'
+  },
+  'escudo-pesado': {
+    id: 'escudo-pesado',
+    name: 'Escudo Pesado',
+    category: 'armor',
+    subcategory: 'shield',
+    price: 8,
+    priceUnit: 'Ef',
+    weight: 6.0,
+    armorType: 'Pesada',
+    damageReduction: 2,
+    description: 'Um escudo grande e robusto que oferece proteção máxima.'
+  },
+
   // ARMADURAS
   'couro': {
     id: 'couro',

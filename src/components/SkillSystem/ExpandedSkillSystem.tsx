@@ -94,12 +94,7 @@ const ExpandedSkillSystem: React.FC<ExpandedSkillSystemProps> = ({
         description: 'Conhecimento geral sobre história, geografia, culturas, ciências e assuntos acadêmicos.',
         category: 'mental'
       },
-      'Corpo-a-Corpo': { 
-        name: 'Corpo-a-Corpo', 
-        attribute: 'força', 
-        description: 'Habilidade de combate com armas de combate próximo (espadas, machados, martelos, etc.).',
-        category: 'combate'
-      },
+
       'Cura': { 
         name: 'Cura', 
         attribute: 'sabedoria', 
@@ -112,12 +107,7 @@ const ExpandedSkillSystem: React.FC<ExpandedSkillSystemProps> = ({
         description: 'Negociar, persuadir, mediar conflitos, influenciar através de argumentos racionais e carisma.',
         category: 'social'
       },
-      'Elemental': { 
-        name: 'Elemental', 
-        attribute: 'sabedoria', 
-        description: 'Controlar e manipular elementos mágicos (fogo, água, terra, ar) em combate e utilidade.',
-        category: 'mágica'
-      },
+
       'Enganação': { 
         name: 'Enganação', 
         attribute: 'carisma', 
@@ -196,12 +186,7 @@ const ExpandedSkillSystem: React.FC<ExpandedSkillSystemProps> = ({
         description: 'Usar os sentidos (visão, audição, olfato) para notar detalhes no ambiente, avistar inimigos escondidos, ouvir conversas distantes.',
         category: 'mental'
       },
-      'Pontaria': { 
-        name: 'Pontaria', 
-        attribute: 'destreza', 
-        description: 'Habilidade de mirar e acertar alvos com precisão com ataques à distância (arcos, bestas, armas de arremesso).',
-        category: 'combate'
-      },
+
       'Reflexos': { 
         name: 'Reflexos', 
         attribute: 'destreza', 
@@ -330,7 +315,7 @@ const ExpandedSkillSystem: React.FC<ExpandedSkillSystemProps> = ({
           </h3>
           <div className="flex items-center gap-2">
             <div className="text-xs text-white bg-white bg-opacity-20 px-2 py-1 rounded">
-              {processedSkills.length} de 28
+              {processedSkills.length} de 25
             </div>
             {isCollapsed ? (
               <ChevronDown className="w-5 h-5 text-white" />
@@ -370,7 +355,7 @@ const ExpandedSkillSystem: React.FC<ExpandedSkillSystemProps> = ({
               </label>
               
               <span className="text-xs text-gray-500">
-                {processedSkills.length} de 28 perícias
+                {processedSkills.length} de 25 perícias gerais
               </span>
             </div>
           </div>

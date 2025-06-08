@@ -69,7 +69,7 @@ export const origins: Record<string, OriginData> = {
     id: 'veterano-guerras',
     name: 'Veterano das Guerras',
     description: 'Antes da paz da Grande Aliança ser estabelecida (ou talvez em alguma escaramuça fronteiriça mais recente), você lutou. Seja como soldado de um dos reinos emergentes, mercenário buscando fortuna, membro de uma milícia defendendo sua vila ou mesmo um batedor em território inimigo durante a turbulenta Era do Conflito, você conheceu o clangor do aço, a estratégia do campo de batalha e a dura realidade da guerra.',
-    trainedSkills: ['Corpo-a-Corpo', 'Fortitude'],
+    trainedSkills: ['Guerra', 'Fortitude'],
     benefit: {
       name: 'Instinto de Batalha',
       description: 'A experiência em combate real afiou seus reflexos. Você pode gastar 1 PM para ganhar vantagem (rolar um dado d20 adicional e usar o maior resultado) em uma jogada de ataque ou em um teste de Iniciativa. Você pode usar este benefício um número de vezes por dia igual ao seu modificador de Constituição (mínimo 1).'

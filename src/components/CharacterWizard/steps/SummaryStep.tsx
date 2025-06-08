@@ -169,7 +169,10 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
         manaPoints: stats.manaPoints > 0 ? stats.manaPoints : undefined,
         vigorPoints: stats.vigorPoints > 0 ? stats.vigorPoints : undefined,
         level: 1,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        // Garantir que perícias de combate sejam salvas
+        combatSkillValues: data.combatSkillValues,
+        finalCombatSkillValues: data.finalCombatSkillValues
       };
 
       // Converter equipamentos selecionados para inventário
@@ -548,6 +551,40 @@ const SummaryStep: React.FC<SummaryStepProps> = ({ data, onUpdate, onNext, onPre
                         </div>
                       ))}
                   </div>
+                </div>
+              )}
+
+              {/* Perícias de Combate */}
+              {data.finalCombatSkillValues && Object.keys(data.finalCombatSkillValues).length > 0 && (
+                <div className="mt-6">
+                  <h6 className="font-medium text-slate-600 mb-2">Perícias de Combate:</h6>
+                  <div className="grid md:grid-cols-2 gap-2">
+                    {Object.entries(data.finalCombatSkillValues).map(([skill, value]) => {
+                      const getSkillIcon = () => {
+                        switch (skill) {
+                          case 'Bloqueio': return '🛡️';
+                          case 'Esquiva': return '💨';
+                          case 'Corpo-a-Corpo': return '⚔️';
+                          case 'Elemental': return '✨';
+                          case 'Pontaria': return '🎯';
+                          default: return '⚪';
+                        }
+                      };
+                      
+                      return (
+                        <div key={skill} className="flex justify-between items-center p-2 bg-red-50 rounded-lg border border-red-200">
+                          <div className="flex items-center gap-2">
+                            <span>{getSkillIcon()}</span>
+                            <span className="text-slate-700">{skill}</span>
+                          </div>
+                          <span className="font-bold text-red-600">Valor {value}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    As perícias de combate são gerenciadas separadamente e se integram com seu equipamento
+                  </p>
                 </div>
               )}
             </div>

@@ -14,6 +14,7 @@ import { classes, subclassData } from '../../data/classes';
 import { origins } from '../../data/origins';
 import { deities } from '../../data/deities';
 import ExpandedSkillSystem from '../SkillSystem/ExpandedSkillSystem';
+import CombatSkillsDisplay from './CombatSkillsDisplay';
 import { equipment, initialFreeEquipment } from '../../data/equipment';
 import { subclassAbilities } from '../../data/abilities';
 import DiceRoller from '../DiceRoller/DiceRoller';
@@ -45,6 +46,9 @@ interface CharacterData {
   selectedClassSkills?: string[];
   selectedRaceSkills?: string[];
   finalSkillValues?: Record<string, number>;
+  // Perícias de Combate (separadas)
+  combatSkillValues?: Record<string, number>;
+  finalCombatSkillValues?: Record<string, number>;
   selectedSubclassAbilities?: string[];
   selectedEquipment?: string[];
   initialGold?: number;
@@ -580,7 +584,6 @@ const CharacterSheet: React.FC = () => {
       'Acrobacia': 'destreza',
       'Furtividade': 'destreza',
       'Ladinagem': 'destreza',
-      'Pontaria': 'destreza',
       'Iniciativa': 'destreza',
       'Reflexos': 'destreza',
       'Cura': 'sabedoria',
@@ -599,7 +602,13 @@ const CharacterSheet: React.FC = () => {
       'Enganação': 'carisma',
       'Intimidação': 'carisma',
       'Jogatina': 'carisma',
-      'Fortitude': 'constituicao'
+      'Fortitude': 'constituicao',
+      // Perícias de Combate
+      'Bloqueio': 'constituicao',
+      'Esquiva': 'destreza',
+      'Corpo-a-Corpo': 'forca',
+      'Elemental': 'sabedoria',
+      'Pontaria': 'destreza'
     };
     
     return skillToAttribute[skillName] || 'forca';
@@ -1070,6 +1079,31 @@ const CharacterSheet: React.FC = () => {
   };
 
   // Obter estatísticas do equipamento ativo
+  // Função para obter perícias de combate relacionadas a um equipamento
+  const getRelatedCombatSkills = (itemId: string) => {
+    const item = equipment[itemId];
+    if (!item) return [];
+
+    const skills: string[] = [];
+    
+    // Mapeamento de equipamentos para perícias de combate
+    if (item.category === 'weapon') {
+      if (item.range === 'Corpo a Corpo' || !item.range) {
+        skills.push('Corpo-a-Corpo');
+      } else if (item.range === 'Distância') {
+        skills.push('Pontaria');
+      }
+    } else if (item.category === 'armor' && item.id?.includes('escudo')) {
+      skills.push('Bloqueio');
+    }
+
+    // Retorna só as perícias que o personagem realmente tem
+    return skills.filter(skill => 
+      characterData.finalCombatSkillValues?.[skill] && 
+      characterData.finalCombatSkillValues[skill] > 0
+    );
+  };
+
   const getActiveEquipmentStats = () => {
     const mainHandWeapon = getEquippedInSlot('main-hand');
     const armor = getEquippedInSlot('armor');
@@ -1562,6 +1596,13 @@ const CharacterSheet: React.FC = () => {
               executeInlineRoll={executeInlineRoll}
               getAttributeForSkill={getAttributeForSkill}
               getTrainedSkills={getTrainedSkills}
+              getSuccessTargets={getSuccessTargets}
+            />
+
+            {/* Perícias de Combate */}
+            <CombatSkillsDisplay
+              characterData={characterData}
+              executeInlineRoll={executeInlineRoll}
               getSuccessTargets={getSuccessTargets}
             />
 
@@ -2077,6 +2118,22 @@ const CharacterSheet: React.FC = () => {
                               )}
                             </div>
                           )}
+
+                                {/* Perícias de Combate Relacionadas */}
+                                {(() => {
+                                  const relatedSkills = getRelatedCombatSkills(item.id);
+                                  if (relatedSkills.length > 0) {
+                                    return (
+                                      <div className="text-xs text-purple-600 font-medium mt-1">
+                                        🎯 Perícias: {relatedSkills.map(skill => {
+                                          const value = characterData.finalCombatSkillValues?.[skill] || 0;
+                                          return `${skill} (${value})`;
+                                        }).join(', ')}
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
 
                                 {/* Descrição */}
                                 {item.description && (
