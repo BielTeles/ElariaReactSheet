@@ -147,7 +147,7 @@ const Home: React.FC = () => {
               to={action.path}
               className="group block"
             >
-              <div className="bg-white rounded-xl shadow-2xl border-4 border-gray-300 p-6 hover:shadow-2xl hover:border-blue-400 transition-all duration-300 transform group-hover:-translate-y-3">
+              <div className="h-full bg-white rounded-xl shadow-2xl border-4 border-gray-300 p-6 hover:shadow-2xl hover:border-blue-400 transition-all duration-300 transform group-hover:-translate-y-3">
                 <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-lg flex items-center justify-center mb-4`}>
                   <action.icon className={action.textColor} size={24} />
                 </div>
