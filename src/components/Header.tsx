@@ -3,10 +3,9 @@
 // ===================================================================
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, Users, Home, Menu, User, LogOut, LogIn, UserPlus, ChevronDown } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { BookOpen, Users, Home, Menu } from 'lucide-react';
 import { ROUTES } from '../constants';
-import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 
 /**
  * Item de navegação
@@ -23,22 +22,9 @@ interface NavItem {
  */
 const Header: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useFirebaseAuth();
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Fechar menu do usuário quando clicar fora
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setIsUserMenuOpen(false);
-      }
-    };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   /**
    * Verifica se a rota está ativa
@@ -116,70 +102,17 @@ const Header: React.FC = () => {
   };
 
   /**
-   * Renderiza o menu do usuário (autenticado)
+   * Renderiza o menu do usuário (simplificado)
    */
   const renderUserMenu = () => {
-    if (!isAuthenticated || !user) {
-      return (
-        <div className="flex items-center space-x-2">
-          <Link
-            to={ROUTES.LOGIN}
-            className="flex items-center space-x-2 px-4 py-2 text-white hover:text-yellow-200 transition-colors"
-          >
-            <LogIn size={20} />
-            <span className="hidden sm:inline">Entrar</span>
-          </Link>
-          <Link
-            to={ROUTES.REGISTER}
-            className="flex items-center space-x-2 px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-colors font-semibold"
-          >
-            <UserPlus size={20} />
-            <span className="hidden sm:inline">Registrar</span>
-          </Link>
-        </div>
-      );
-    }
-
-         return (
-       <div className="relative" ref={userMenuRef}>
-         <button
-          onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-          className="flex items-center space-x-2 px-4 py-2 text-white hover:text-yellow-200 transition-colors rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+    return (
+      <div className="flex items-center space-x-2">
+        <Link
+          to={ROUTES.CHARACTER_NEW}
+          className="flex items-center space-x-2 px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-colors font-semibold"
         >
-          <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-            <User size={16} className="text-black" />
-          </div>
-          <span className="hidden sm:inline font-medium">{user.username}</span>
-          <ChevronDown size={16} className={`transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
-        </button>
-
-        {/* Dropdown Menu */}
-        {isUserMenuOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-            <div className="py-2">
-              <Link
-                to={ROUTES.PROFILE}
-                onClick={() => setIsUserMenuOpen(false)}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <User size={16} />
-                <span>Perfil</span>
-              </Link>
-              <hr className="my-2" />
-              <button
-                onClick={() => {
-                  logout();
-                  setIsUserMenuOpen(false);
-                  navigate(ROUTES.HOME);
-                }}
-                className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
-              >
-                <LogOut size={16} />
-                <span>Sair</span>
-              </button>
-            </div>
-          </div>
-        )}
+          <span className="hidden sm:inline">Criar Personagem</span>
+        </Link>
       </div>
     );
   };

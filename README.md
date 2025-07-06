@@ -1,4 +1,4 @@
-<div align="center">
+mpm,<div align="center">
 
 # 🎲 ELARIA RPG - Sistema de Fichas
 
@@ -73,7 +73,8 @@ O **Elaria RPG** é um sistema completo de gerenciamento de fichas de personagen
 - **React Router DOM** - Roteamento
 
 ### **Funcionalidades**
-- **LocalStorage** - Persistência de dados
+- **LocalStorage** - Persistência local de dados
+- **Auto-salvamento** - Sistema inteligente de salvamento automático
 - **File API** - Upload de imagens
 - **Service Workers** - Cache e performance
 - **Responsive Design** - Design responsivo

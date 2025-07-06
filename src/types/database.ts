@@ -1,21 +1,20 @@
 // ===================================================================
-// TIPOS DO BANCO DE DADOS - ELARIA RPG
+// TIPOS DO BANCO DE DADOS - ELARIA RPG (SUPABASE)
 // ===================================================================
 
-import { Timestamp } from 'firebase/firestore';
 import { Character } from './character';
 
 /**
  * Usuário no banco de dados
  */
 export interface DatabaseUser {
-  uid: string;
+  id: string; // UUID do Supabase
   email: string;
   username: string;
-  displayName?: string;
-  avatar?: string;
-  createdAt: Timestamp;
-  lastLogin: Timestamp;
+  display_name?: string;
+  avatar_url?: string;
+  created_at: string; // ISO string
+  last_login: string; // ISO string
   preferences: UserDatabasePreferences;
   statistics: UserStatistics;
 }
@@ -26,33 +25,33 @@ export interface DatabaseUser {
 export interface UserDatabasePreferences {
   theme: 'light' | 'dark' | 'auto';
   language: 'pt-BR' | 'en';
-  autoSave: boolean;
+  auto_save: boolean;
   notifications: boolean;
-  autoBackup: boolean;
-  shareCharacters: boolean;
+  auto_backup: boolean;
+  share_characters: boolean;
 }
 
 /**
  * Estatísticas do usuário
  */
 export interface UserStatistics {
-  charactersCreated: number;
-  totalPlayTime: number; // em minutos
-  favoriteClass?: string;
-  favoriteRace?: string;
-  lastCharacterCreated?: Timestamp;
+  characters_created: number;
+  total_play_time: number; // em minutos
+  favorite_class?: string;
+  favorite_race?: string;
+  last_character_created?: string; // ISO string
 }
 
 /**
  * Personagem no banco de dados
  */
 export interface DatabaseCharacter extends Omit<Character, 'id' | 'createdAt' | 'updatedAt'> {
-  id?: string; // Firestore ID
-  userId: string; // ID do proprietário
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  id?: string; // UUID do Supabase
+  user_id: string; // ID do proprietário
+  created_at: string; // ISO string
+  updated_at: string; // ISO string
   version: number; // Para versionamento
-  isPublic: boolean; // Se pode ser visto por outros
+  is_public: boolean; // Se pode ser visto por outros
   tags: string[]; // Tags para organização
   backup?: CharacterBackup;
 }
@@ -61,13 +60,13 @@ export interface DatabaseCharacter extends Omit<Character, 'id' | 'createdAt' | 
  * Backup de personagem
  */
 export interface CharacterBackup {
-  previousVersions: {
+  previous_versions: {
     version: number;
     data: Partial<DatabaseCharacter>;
-    timestamp: Timestamp;
+    timestamp: string; // ISO string
     reason: string; // 'auto' | 'manual' | 'before-edit'
   }[];
-  lastBackup: Timestamp;
+  last_backup: string; // ISO string
 }
 
 /**
@@ -77,24 +76,24 @@ export interface Campaign {
   id: string;
   name: string;
   description: string;
-  ownerId: string; // ID do mestre
+  owner_id: string; // ID do mestre
   members: CampaignMember[];
   characters: string[]; // IDs dos personagens
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  created_at: string; // ISO string
+  updated_at: string; // ISO string
   settings: CampaignSettings;
-  isActive: boolean;
+  is_active: boolean;
 }
 
 /**
  * Membro da campanha
  */
 export interface CampaignMember {
-  userId: string;
+  user_id: string;
   username: string;
   role: 'master' | 'player';
-  joinedAt: Timestamp;
-  characterIds: string[];
+  joined_at: string; // ISO string
+  character_ids: string[];
   permissions: CampaignPermissions;
 }
 
@@ -102,14 +101,14 @@ export interface CampaignMember {
  * Configurações da campanha
  */
 export interface CampaignSettings {
-  isPublic: boolean;
-  allowCharacterSharing: boolean;
-  maxCharactersPerPlayer: number;
-  autoBackup: boolean;
+  is_public: boolean;
+  allow_character_sharing: boolean;
+  max_characters_per_player: number;
+  auto_backup: boolean;
   rules: {
-    allowMulticlass: boolean;
-    startingLevel: number;
-    useOptionalRules: boolean;
+    allow_multiclass: boolean;
+    starting_level: number;
+    use_optional_rules: boolean;
   };
 }
 
@@ -117,10 +116,10 @@ export interface CampaignSettings {
  * Permissões na campanha
  */
 export interface CampaignPermissions {
-  canInvite: boolean;
-  canEditCharacters: boolean;
-  canViewOtherCharacters: boolean;
-  canManageSettings: boolean;
+  can_invite: boolean;
+  can_edit_characters: boolean;
+  can_view_other_characters: boolean;
+  can_manage_settings: boolean;
 }
 
 /**
@@ -128,13 +127,13 @@ export interface CampaignPermissions {
  */
 export interface ActivityLog {
   id: string;
-  userId: string;
+  user_id: string;
   action: ActivityAction;
-  targetType: 'character' | 'campaign' | 'user';
-  targetId: string;
+  target_type: 'character' | 'campaign' | 'user';
+  target_id: string;
   details: Record<string, any>;
-  timestamp: Timestamp;
-  ipAddress?: string;
+  timestamp: string; // ISO string
+  ip_address?: string;
 }
 
 /**
@@ -153,13 +152,13 @@ export type ActivityAction =
   | 'profile_updated';
 
 /**
- * Estrutura das coleções do Firestore
+ * Estrutura das tabelas do Supabase
  */
-export interface FirestoreCollections {
+export interface SupabaseTables {
   users: DatabaseUser;
   characters: DatabaseCharacter;
   campaigns: Campaign;
-  activityLogs: ActivityLog;
+  activity_logs: ActivityLog;
 }
 
 /**
@@ -176,8 +175,8 @@ export interface CreateUserData {
  */
 export interface UpdateUserData {
   username?: string;
-  displayName?: string;
-  avatar?: string;
+  display_name?: string;
+  avatar_url?: string;
   preferences?: Partial<UserDatabasePreferences>;
 }
 
@@ -185,20 +184,20 @@ export interface UpdateUserData {
  * Filtros para busca de personagens
  */
 export interface CharacterFilters {
-  userId?: string;
-  isPublic?: boolean;
+  user_id?: string;
+  is_public?: boolean;
   class?: string;
   race?: string;
   tags?: string[];
-  createdAfter?: Date;
-  createdBefore?: Date;
+  created_after?: string; // ISO string
+  created_before?: string; // ISO string
 }
 
 /**
  * Opções de ordenação
  */
 export interface SortOptions {
-  field: keyof DatabaseCharacter;
+  field: string;
   direction: 'asc' | 'desc';
 }
 

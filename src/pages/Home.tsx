@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Users, BookOpen, Scroll, Zap, Shield, Eye, Heart, LogIn, UserPlus } from 'lucide-react';
-import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
+// Removido autenticação - versão local
 import { ROUTES } from '../constants';
 
 const Home: React.FC = () => {
-  const { isAuthenticated, user } = useFirebaseAuth();
+  // Versão local sem autenticação
+  const isAuthenticated = true;
+  const user = { username: 'Jogador' };
 
   const quickActions = [
     {

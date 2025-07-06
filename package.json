@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@supabase/supabase-js": "^2.50.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -12,7 +13,6 @@
     "@types/node": "^16.18.126",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
-    "firebase": "^11.9.0",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -48,7 +48,6 @@
   "devDependencies": {
     "@types/react-router-dom": "^5.3.3",
     "autoprefixer": "^10.4.21",
-    "firebase-tools": "^14.6.0",
     "postcss": "^8.5.4",
     "tailwindcss": "^3.4.17"
   }

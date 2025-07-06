@@ -2,24 +2,16 @@
 // APP PRINCIPAL - ELARIA RPG
 // ===================================================================
 
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { FirebaseAuthProvider, useFirebaseAuth } from './contexts/FirebaseAuthContext';
-import { CharacterProvider } from './contexts/CharacterContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AlertProvider } from './contexts/AlertContext';
-import { ProtectedRoute, PublicRoute } from './components/ProtectedRoute';
 import Header from './components/Header';
-import { MigrationModal } from './components/MigrationModal';
-import { useMigration } from './hooks/useMigration';
 import { ROUTES } from './constants';
 
 // Lazy loading dos componentes de página
 const Home = lazy(() => import('./pages/Home'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const Profile = lazy(() => import('./pages/Profile'));
 const CharacterList = lazy(() => import('./pages/CharacterList'));
 const CharacterCreation = lazy(() => import('./pages/CharacterCreation'));
 const CharacterSheet = lazy(() => import('./pages/CharacterSheet'));
@@ -38,43 +30,7 @@ const LoadingSpinner: React.FC = () => (
   </div>
 );
 
-/**
- * Componente para gerenciar migração
- */
-const MigrationManager: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useFirebaseAuth();
-  const { checkForLocalData } = useMigration();
-  const [showMigrationModal, setShowMigrationModal] = useState(false);
-  const [migrationChecked, setMigrationChecked] = useState(false);
 
-  useEffect(() => {
-    // Verificar migração apenas quando o usuário estiver autenticado e não estivermos carregando
-    if (isAuthenticated && !isLoading && !migrationChecked) {
-      const hasLocalData = checkForLocalData();
-      if (hasLocalData) {
-        setShowMigrationModal(true);
-      }
-      setMigrationChecked(true);
-    }
-  }, [isAuthenticated, isLoading, migrationChecked, checkForLocalData]);
-
-  const handleMigrationComplete = () => {
-    setShowMigrationModal(false);
-    // Opcionalmente, recarregar a página ou fazer outras ações
-    console.log('Migração concluída com sucesso!');
-  };
-
-  return (
-    <>
-      {children}
-      <MigrationModal
-        isOpen={showMigrationModal}
-        onClose={() => setShowMigrationModal(false)}
-        onMigrationComplete={handleMigrationComplete}
-      />
-    </>
-  );
-};
 
 /**
  * Componente de conteúdo da aplicação
@@ -107,39 +63,10 @@ function AppContent() {
               <Routes>
                 <Route path={ROUTES.HOME} element={<Home />} />
                 
-                {/* Rotas públicas (redirecionam se logado) */}
-                <Route path={ROUTES.LOGIN} element={
-                  <PublicRoute>
-                    <Login />
-                  </PublicRoute>
-                } />
-                <Route path={ROUTES.REGISTER} element={
-                  <PublicRoute>
-                    <Register />
-                  </PublicRoute>
-                } />
-                
-                {/* Rotas protegidas (requerem login) */}
-                <Route path={ROUTES.PROFILE} element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } />
-                <Route path={ROUTES.CHARACTERS} element={
-                  <ProtectedRoute>
-                    <CharacterList />
-                  </ProtectedRoute>
-                } />
-                <Route path={ROUTES.CHARACTER_NEW} element={
-                  <ProtectedRoute>
-                    <CharacterCreation />
-                  </ProtectedRoute>
-                } />
-                <Route path={ROUTES.CHARACTER_DETAIL} element={
-                  <ProtectedRoute>
-                    <CharacterSheet />
-                  </ProtectedRoute>
-                } />
+                {/* Rotas principais */}
+                <Route path={ROUTES.CHARACTERS} element={<CharacterList />} />
+                <Route path={ROUTES.CHARACTER_NEW} element={<CharacterCreation />} />
+                <Route path={ROUTES.CHARACTER_DETAIL} element={<CharacterSheet />} />
                 
                 {/* Rotas abertas */}
                 <Route path={ROUTES.REFERENCE} element={<ReferenceGuide />} />
@@ -189,17 +116,11 @@ function App() {
         v7_startTransition: true, 
         v7_relativeSplatPath: true 
       }}>
-        <FirebaseAuthProvider>
-          <AlertProvider>
-            <ToastProvider>
-              <CharacterProvider>
-                <MigrationManager>
-                  <AppContent />
-                </MigrationManager>
-              </CharacterProvider>
-            </ToastProvider>
-          </AlertProvider>
-        </FirebaseAuthProvider>
+        <AlertProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </AlertProvider>
       </Router>
     </ErrorBoundary>
   );
