@@ -7,7 +7,9 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 import { AlertProvider } from './contexts/AlertContext';
+import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/Header';
+import ProtectedRoute from './components/ProtectedRoute';
 import { ROUTES } from './constants';
 
 // Lazy loading dos componentes de página
@@ -29,8 +31,6 @@ const LoadingSpinner: React.FC = () => (
     </div>
   </div>
 );
-
-
 
 /**
  * Componente de conteúdo da aplicação
@@ -54,7 +54,11 @@ function AppContent() {
               <Routes>
                 <Route 
                   path={ROUTES.CHARACTER_SHEET} 
-                  element={<FinalizedCharacterSheet />} 
+                  element={
+                    <ProtectedRoute>
+                      <FinalizedCharacterSheet />
+                    </ProtectedRoute>
+                  } 
                 />
               </Routes>
             </main>
@@ -63,12 +67,33 @@ function AppContent() {
               <Routes>
                 <Route path={ROUTES.HOME} element={<Home />} />
                 
-                {/* Rotas principais */}
-                <Route path={ROUTES.CHARACTERS} element={<CharacterList />} />
-                <Route path={ROUTES.CHARACTER_NEW} element={<CharacterCreation />} />
-                <Route path={ROUTES.CHARACTER_DETAIL} element={<CharacterSheet />} />
+                {/* Rotas protegidas - requerem autenticação */}
+                <Route 
+                  path={ROUTES.CHARACTERS} 
+                  element={
+                    <ProtectedRoute>
+                      <CharacterList />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path={ROUTES.CHARACTER_NEW} 
+                  element={
+                    <ProtectedRoute>
+                      <CharacterCreation />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path={ROUTES.CHARACTER_DETAIL} 
+                  element={
+                    <ProtectedRoute>
+                      <CharacterSheet />
+                    </ProtectedRoute>
+                  } 
+                />
                 
-                {/* Rotas abertas */}
+                {/* Rotas abertas - não requerem autenticação */}
                 <Route path={ROUTES.REFERENCE} element={<ReferenceGuide />} />
                 
                 {/* Rota 404 */}
@@ -116,11 +141,13 @@ function App() {
         v7_startTransition: true, 
         v7_relativeSplatPath: true 
       }}>
-        <AlertProvider>
-          <ToastProvider>
-            <AppContent />
-          </ToastProvider>
-        </AlertProvider>
+        <AuthProvider>
+          <AlertProvider>
+            <ToastProvider>
+              <AppContent />
+            </ToastProvider>
+          </AlertProvider>
+        </AuthProvider>
       </Router>
     </ErrorBoundary>
   );

@@ -5,6 +5,7 @@ import { classes } from '../data/classes';
 import { races } from '../data/races';
 import SaveSettings from '../components/SaveSettings';
 import SaveIndicator from '../components/SaveIndicator';
+import { useAuth } from '../contexts/AuthContext';
 import { 
   Plus, User, Calendar, Eye, Trash2, Copy, Download, Upload, 
   BarChart3, Sparkles, Heart, Zap, Flame, Star,
@@ -13,6 +14,7 @@ import {
 
 const CharacterList: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [characters, setCharacters] = useState<SavedCharacter[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClass, setFilterClass] = useState('');
@@ -152,9 +154,19 @@ const CharacterList: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Meus Personagens</h1>
-              <p className="text-slate-300">
-                {characters.length} personagem{characters.length !== 1 ? 's' : ''} criado{characters.length !== 1 ? 's' : ''}
-              </p>
+              <div className="flex items-center space-x-4">
+                <p className="text-slate-300">
+                  {characters.length} personagem{characters.length !== 1 ? 's' : ''} criado{characters.length !== 1 ? 's' : ''}
+                </p>
+                {user && (
+                  <div className="flex items-center space-x-2 text-slate-400">
+                    <User className="w-4 h-4" />
+                    <span className="text-sm">
+                      Conta: <span className="text-blue-300 font-medium">{user.username}</span>
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center gap-4">
@@ -387,16 +399,25 @@ const CharacterList: React.FC = () => {
             </h3>
             <p className="text-gray-500 mb-6">
               {characters.length === 0 
-                ? 'Comece criando seu primeiro herói de Elaria!'
+                ? `${user ? `Olá, ${user.username}! ` : ''}Comece criando seu primeiro herói de Elaria!`
                 : 'Tente ajustar os filtros de busca.'}
             </p>
             {characters.length === 0 && (
-              <button
-                onClick={() => navigate('/characters/new')}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
-              >
-                Criar Primeiro Personagem
-              </button>
+              <div className="space-y-4">
+                {user && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-blue-800 text-sm">
+                      ✨ Seus personagens serão salvos automaticamente em sua conta Google e sincronizados em todos os seus dispositivos.
+                    </p>
+                  </div>
+                )}
+                <button
+                  onClick={() => navigate('/characters/new')}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg"
+                >
+                  Criar Primeiro Personagem
+                </button>
+              </div>
             )}
           </div>
         ) : (

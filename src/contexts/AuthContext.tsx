@@ -1,524 +1,384 @@
-// ===================================================================
-// CONTEXTO DE AUTENTICAÇÃO - ELARIA RPG
-// ===================================================================
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { User } from '../types/auth';
+import { supabase } from '../services/supabase';
+import { Session } from '@supabase/supabase-js';
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { 
-  User, 
-  AuthState, 
-  AuthContextType, 
-  LoginCredentials, 
-  RegisterCredentials,
-  UserPreferences,
-  StoredUserData,
-  SessionToken
-} from '../types/auth';
-import { 
-  STORAGE_KEYS, 
-  AUTH_CONFIG, 
-  AUTH_ERROR_MESSAGES 
-} from '../constants';
-
-// ===================================================================
-// ESTADO INICIAL
-// ===================================================================
-
-const initialState: AuthState = {
-  user: null,
-  isAuthenticated: false,
-  isLoading: true,
-  error: null,
-};
-
-// ===================================================================
-// ACTIONS
-// ===================================================================
-
-type AuthAction =
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_USER'; payload: User | null }
-  | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'CLEAR_ERROR' }
-  | { type: 'LOGIN_SUCCESS'; payload: User }
-  | { type: 'LOGOUT' };
-
-// ===================================================================
-// REDUCER
-// ===================================================================
-
-function authReducer(state: AuthState, action: AuthAction): AuthState {
-  switch (action.type) {
-    case 'SET_LOADING':
-      return { ...state, isLoading: action.payload };
-    
-    case 'SET_USER':
-      return {
-        ...state,
-        user: action.payload,
-        isAuthenticated: !!action.payload,
-        isLoading: false,
-        error: null,
-      };
-    
-    case 'SET_ERROR':
-      return { ...state, error: action.payload, isLoading: false };
-    
-    case 'CLEAR_ERROR':
-      return { ...state, error: null };
-    
-    case 'LOGIN_SUCCESS':
-      return {
-        ...state,
-        user: action.payload,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-      };
-    
-    case 'LOGOUT':
-      return {
-        ...state,
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
-      };
-    
-    default:
-      return state;
-  }
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+  error: string | null;
+  clearError: () => void;
 }
-
-// ===================================================================
-// UTILITÁRIOS
-// ===================================================================
-
-/**
- * Gera um ID único
- */
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-/**
- * Valida email
- */
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-/**
- * Valida senha
- */
-function isValidPassword(password: string): boolean {
-  return AUTH_CONFIG.PASSWORD_PATTERN.test(password);
-}
-
-/**
- * Cria token de sessão
- */
-function createSessionToken(userId: string, rememberMe: boolean): SessionToken {
-  const duration = rememberMe ? AUTH_CONFIG.REMEMBER_ME_DURATION : AUTH_CONFIG.SESSION_DURATION;
-  return {
-    token: generateId(),
-    userId,
-    expiresAt: new Date(Date.now() + duration),
-    refreshToken: generateId(),
-  };
-}
-
-/**
- * Verifica se o token é válido
- */
-function isTokenValid(token: SessionToken): boolean {
-  return new Date() < new Date(token.expiresAt);
-}
-
-// ===================================================================
-// SERVIÇOS DE STORAGE
-// ===================================================================
-
-class AuthStorage {
-  /**
-   * Salva dados do usuário
-   */
-  static saveUserData(userData: StoredUserData): void {
-    try {
-      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify({
-        ...userData,
-        user: {
-          ...userData.user,
-          createdAt: userData.user.createdAt.toISOString(),
-          lastLogin: userData.user.lastLogin.toISOString(),
-        },
-        sessionToken: {
-          ...userData.sessionToken,
-          expiresAt: userData.sessionToken.expiresAt.toISOString(),
-        }
-      }));
-    } catch (error) {
-      console.error('Erro ao salvar dados do usuário:', error);
-    }
-  }
-
-  /**
-   * Carrega dados do usuário
-   */
-  static loadUserData(): StoredUserData | null {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-      if (!data) return null;
-
-      const parsed = JSON.parse(data);
-      return {
-        ...parsed,
-        user: {
-          ...parsed.user,
-          createdAt: new Date(parsed.user.createdAt),
-          lastLogin: new Date(parsed.user.lastLogin),
-        },
-        sessionToken: {
-          ...parsed.sessionToken,
-          expiresAt: new Date(parsed.sessionToken.expiresAt),
-        }
-      };
-    } catch (error) {
-      console.error('Erro ao carregar dados do usuário:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Remove dados do usuário
-   */
-  static clearUserData(): void {
-    localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-  }
-
-  /**
-   * Carrega usuários existentes (simulação de BD)
-   */
-  static loadUsers(): User[] {
-    try {
-      const data = localStorage.getItem('elaria-users');
-      if (!data) return [];
-      
-      const users = JSON.parse(data);
-      return users.map((user: any) => ({
-        ...user,
-        createdAt: new Date(user.createdAt),
-        lastLogin: new Date(user.lastLogin),
-      }));
-    } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Salva usuários (simulação de BD)
-   */
-  static saveUsers(users: User[]): void {
-    try {
-      const serializedUsers = users.map(user => ({
-        ...user,
-        createdAt: user.createdAt.toISOString(),
-        lastLogin: user.lastLogin.toISOString(),
-      }));
-      localStorage.setItem('elaria-users', JSON.stringify(serializedUsers));
-    } catch (error) {
-      console.error('Erro ao salvar usuários:', error);
-    }
-  }
-}
-
-// ===================================================================
-// CONTEXTO
-// ===================================================================
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ===================================================================
-// PROVIDER
-// ===================================================================
-
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, initialState);
-
-  // ===================================================================
-  // INICIALIZAÇÃO
-  // ===================================================================
-
-  useEffect(() => {
-    const initAuth = async () => {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      
-      try {
-        const userData = AuthStorage.loadUserData();
-        
-        if (userData && isTokenValid(userData.sessionToken)) {
-          // Atualizar último login
-          const updatedUser = {
-            ...userData.user,
-            lastLogin: new Date(),
-          };
-          
-          const updatedUserData = {
-            ...userData,
-            user: updatedUser,
-          };
-          
-          AuthStorage.saveUserData(updatedUserData);
-          dispatch({ type: 'SET_USER', payload: updatedUser });
-        } else {
-          // Sessão expirada
-          AuthStorage.clearUserData();
-          dispatch({ type: 'SET_USER', payload: null });
-        }
-      } catch (error) {
-        console.error('Erro na inicialização da autenticação:', error);
-        dispatch({ type: 'SET_ERROR', payload: 'Erro ao carregar sessão' });
-      }
-    };
-
-    initAuth();
-  }, []);
-
-  // ===================================================================
-  // FUNÇÕES DE AUTENTICAÇÃO
-  // ===================================================================
-
-  const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    dispatch({ type: 'CLEAR_ERROR' });
-
-    try {
-      // Validações
-      if (!credentials.email) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.REQUIRED_EMAIL });
-        return false;
-      }
-
-      if (!credentials.password) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.REQUIRED_PASSWORD });
-        return false;
-      }
-
-      if (!isValidEmail(credentials.email)) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.INVALID_EMAIL });
-        return false;
-      }
-
-      // Buscar usuário
-      const users = AuthStorage.loadUsers();
-      const user = users.find(u => u.email === credentials.email);
-
-      if (!user) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.USER_NOT_FOUND });
-        return false;
-      }
-
-      // Aqui seria validada a senha (em um sistema real, seria um hash)
-      // Por simplicidade, vamos usar uma validação básica
-      
-      // Atualizar dados do usuário
-      const updatedUser = {
-        ...user,
-        lastLogin: new Date(),
-      };
-
-      // Criar sessão
-      const sessionToken = createSessionToken(user.id, credentials.rememberMe || false);
-      
-      const userData: StoredUserData = {
-        user: updatedUser,
-        sessionToken,
-        rememberMe: credentials.rememberMe || false,
-      };
-
-      // Salvar dados
-      AuthStorage.saveUserData(userData);
-
-      // Atualizar lista de usuários
-      const updatedUsers = users.map(u => u.id === user.id ? updatedUser : u);
-      AuthStorage.saveUsers(updatedUsers);
-
-      dispatch({ type: 'LOGIN_SUCCESS', payload: updatedUser });
-      return true;
-
-    } catch (error) {
-      console.error('Erro no login:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Erro interno. Tente novamente.' });
-      return false;
-    }
-  }, []);
-
-  const register = useCallback(async (credentials: RegisterCredentials): Promise<boolean> => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    dispatch({ type: 'CLEAR_ERROR' });
-
-    try {
-      // Validações
-      if (!credentials.username) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.REQUIRED_USERNAME });
-        return false;
-      }
-
-      if (!credentials.email) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.REQUIRED_EMAIL });
-        return false;
-      }
-
-      if (!credentials.password) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.REQUIRED_PASSWORD });
-        return false;
-      }
-
-      if (!isValidEmail(credentials.email)) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.INVALID_EMAIL });
-        return false;
-      }
-
-      if (!isValidPassword(credentials.password)) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.WEAK_PASSWORD });
-        return false;
-      }
-
-      if (credentials.password !== credentials.confirmPassword) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.PASSWORDS_DONT_MATCH });
-        return false;
-      }
-
-      // Verificar se usuário já existe
-      const users = AuthStorage.loadUsers();
-      
-      if (users.some(u => u.email === credentials.email)) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.EMAIL_ALREADY_EXISTS });
-        return false;
-      }
-
-      if (users.some(u => u.username === credentials.username)) {
-        dispatch({ type: 'SET_ERROR', payload: AUTH_ERROR_MESSAGES.USERNAME_ALREADY_EXISTS });
-        return false;
-      }
-
-      // Criar novo usuário
-      const defaultPreferences: UserPreferences = {
-        theme: 'auto',
-        language: 'pt-BR',
-        autoSave: true,
-        notifications: true,
-      };
-
-      const newUser: User = {
-        id: generateId(),
-        username: credentials.username,
-        email: credentials.email,
-        createdAt: new Date(),
-        lastLogin: new Date(),
-        preferences: defaultPreferences,
-      };
-
-      // Salvar usuário
-      const updatedUsers = [...users, newUser];
-      AuthStorage.saveUsers(updatedUsers);
-
-      // Fazer login automático
-      const sessionToken = createSessionToken(newUser.id, false);
-      
-      const userData: StoredUserData = {
-        user: newUser,
-        sessionToken,
-        rememberMe: false,
-      };
-
-      AuthStorage.saveUserData(userData);
-      dispatch({ type: 'LOGIN_SUCCESS', payload: newUser });
-      return true;
-
-    } catch (error) {
-      console.error('Erro no registro:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Erro interno. Tente novamente.' });
-      return false;
-    }
-  }, []);
-
-  const logout = useCallback(() => {
-    AuthStorage.clearUserData();
-    dispatch({ type: 'LOGOUT' });
-  }, []);
-
-  const clearError = useCallback(() => {
-    dispatch({ type: 'CLEAR_ERROR' });
-  }, []);
-
-  const updateProfile = useCallback(async (updates: Partial<User>): Promise<boolean> => {
-    if (!state.user) return false;
-
-    try {
-      const updatedUser = { ...state.user, ...updates };
-      
-      // Atualizar na lista de usuários
-      const users = AuthStorage.loadUsers();
-      const updatedUsers = users.map(u => u.id === state.user!.id ? updatedUser : u);
-      AuthStorage.saveUsers(updatedUsers);
-
-      // Atualizar dados salvos
-      const userData = AuthStorage.loadUserData();
-      if (userData) {
-        const updatedUserData = {
-          ...userData,
-          user: updatedUser,
-        };
-        AuthStorage.saveUserData(updatedUserData);
-      }
-
-      dispatch({ type: 'SET_USER', payload: updatedUser });
-      return true;
-      
-    } catch (error) {
-      console.error('Erro ao atualizar perfil:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Erro ao atualizar perfil' });
-      return false;
-    }
-  }, [state.user]);
-
-  // ===================================================================
-  // VALOR DO CONTEXTO
-  // ===================================================================
-
-  const contextValue: AuthContextType = {
-    user: state.user,
-    isAuthenticated: state.isAuthenticated,
-    isLoading: state.isLoading,
-    error: state.error,
-    login,
-    register,
-    logout,
-    clearError,
-    updateProfile,
-  };
-
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-// ===================================================================
-// HOOK
-// ===================================================================
-
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;
+};
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+// Singleton para controlar inicialização global
+let globalInitialized = false;
+let globalInitializing = false;
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const forceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Força fim do loading após timeout
+  const forceStopLoading = useCallback(() => {
+    if (!mountedRef.current) return;
+    console.log('🔴 FORÇANDO FIM DO LOADING - TIMEOUT ATINGIDO');
+    setLoading(false);
+    globalInitialized = true;
+    globalInitializing = false;
+    setError(null);
+  }, []);
+
+  // Timeout mais agressivo para evitar loading infinito
+  const setLoadingWithTimeout = useCallback((isLoading: boolean, timeout = 3000) => {
+    if (!mountedRef.current) return;
+    console.log(`🟡 setLoadingWithTimeout: ${isLoading}, timeout: ${timeout}ms`);
+    
+    // Limpar timeouts existentes
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    if (forceTimeoutRef.current) {
+      clearTimeout(forceTimeoutRef.current);
+    }
+
+    if (isLoading) {
+      setLoading(true);
+      
+      // Timeout normal
+      timeoutRef.current = setTimeout(() => {
+        if (mountedRef.current) {
+          console.warn('⚠️ Loading timeout - tentando finalizar...');
+          setLoading(false);
+          globalInitialized = true;
+          globalInitializing = false;
+        }
+      }, timeout);
+      
+      // Timeout forçado (mais agressivo)
+      forceTimeoutRef.current = setTimeout(forceStopLoading, timeout + 1000);
+    } else {
+      setLoading(false);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (forceTimeoutRef.current) {
+        clearTimeout(forceTimeoutRef.current);
+        forceTimeoutRef.current = null;
+      }
+    }
+  }, [forceStopLoading]);
+
+  // Converte usuário do Supabase para nosso tipo User
+  const convertSupabaseUser = useCallback((supabaseUser: any, profile?: any): User => {
+    return {
+      id: supabaseUser.id,
+      username: profile?.username || supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'Usuário',
+      email: supabaseUser.email || '',
+      avatar: profile?.avatar_url || supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture,
+      createdAt: new Date(supabaseUser.created_at),
+      lastLogin: new Date(),
+      preferences: profile?.preferences || {
+        theme: 'auto',
+        language: 'pt-BR',
+        autoSave: true,
+        notifications: true,
+      }
+    };
+  }, []);
+
+  // Busca ou cria perfil do usuário
+  const getOrCreateProfile = useCallback(async (supabaseUser: any) => {
+    try {
+      console.log('🔍 Buscando/criando perfil para:', supabaseUser.email);
+      
+      // Primeiro, tenta buscar o perfil existente
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .maybeSingle();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('❌ Erro ao buscar perfil:', profileError);
+        return null;
+      }
+
+      // Se perfil não existe, cria um novo
+      if (!profile) {
+        console.log('➕ Criando novo perfil...');
+        const newProfile = {
+          id: supabaseUser.id,
+          username: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'Usuário',
+          display_name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'Usuário',
+          avatar_url: supabaseUser.user_metadata?.avatar_url || supabaseUser.user_metadata?.picture,
+          preferences: {
+            theme: 'auto',
+            language: 'pt-BR',
+            auto_save: true,
+            notifications: true,
+            auto_backup: true,
+            share_characters: false,
+          }
+        };
+
+        const { data: createdProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert(newProfile)
+          .select('*')
+          .single();
+
+        if (createError) {
+          console.error('❌ Erro ao criar perfil:', createError);
+          return null;
+        }
+
+        console.log('✅ Perfil criado com sucesso');
+        return createdProfile;
+      }
+
+      console.log('✅ Perfil encontrado');
+      return profile;
+    } catch (error) {
+      console.error('❌ Erro ao gerenciar perfil:', error);
+      return null;
+    }
+  }, []);
+
+  // Atualiza estado do usuário
+  const updateUserState = useCallback(async (session: Session | null) => {
+    if (!mountedRef.current) return;
+    
+    console.log('🔄 updateUserState chamado, session:', !!session);
+
+    try {
+      if (session?.user) {
+        console.log('👤 Usuário encontrado, processando...');
+        const profile = await getOrCreateProfile(session.user);
+        const userData = convertSupabaseUser(session.user, profile);
+        if (mountedRef.current) {
+          setUser(userData);
+          setError(null);
+          console.log('✅ Estado do usuário atualizado:', userData.username);
+        }
+      } else {
+        console.log('🚫 Nenhum usuário na sessão');
+        if (mountedRef.current) {
+          setUser(null);
+          setError(null);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erro ao atualizar estado do usuário:', error);
+      if (mountedRef.current) {
+        setError('Erro ao carregar dados do usuário');
+      }
+    } finally {
+      if (mountedRef.current) {
+        console.log('🏁 Finalizando loading...');
+        setLoadingWithTimeout(false);
+        globalInitialized = true;
+        globalInitializing = false;
+      }
+    }
+  }, [getOrCreateProfile, convertSupabaseUser, setLoadingWithTimeout]);
+
+  // Inicializa autenticação apenas uma vez globalmente
+  useEffect(() => {
+    if (globalInitialized || globalInitializing) {
+      console.log('⚠️ Já inicializado ou inicializando globalmente, pulando...');
+      if (globalInitialized) {
+        setLoading(false);
+      }
+      return;
+    }
+
+    console.log('🚀 Inicializando autenticação (primeira vez)...');
+    globalInitializing = true;
+
+    const initializeAuth = async () => {
+      try {
+        setLoadingWithTimeout(true, 3000);
+        
+        console.log('📡 Obtendo sessão...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!mountedRef.current) {
+          console.log('⚠️ Componente desmontado, cancelando...');
+          globalInitializing = false;
+          return;
+        }
+        
+        if (error) {
+          console.error('❌ Erro ao obter sessão:', error);
+          setError('Erro ao carregar sessão');
+          setLoadingWithTimeout(false);
+          globalInitialized = true;
+          globalInitializing = false;
+        } else {
+          console.log('📡 Sessão obtida, atualizando estado...');
+          await updateUserState(session);
+        }
+      } catch (error) {
+        console.error('❌ Erro na inicialização:', error);
+        if (mountedRef.current) {
+          setError('Erro ao inicializar autenticação');
+          setLoadingWithTimeout(false);
+          globalInitialized = true;
+          globalInitializing = false;
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // Listener para mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mountedRef.current) return;
+        console.log('🔔 Auth state changed:', event, session?.user?.email);
+        
+        // Processar logout
+        if (event === 'SIGNED_OUT') {
+          console.log('🚪 Processando logout...');
+          setUser(null);
+          setError(null);
+          setLoadingWithTimeout(false);
+          return;
+        }
+        
+        // Ignorar apenas TOKEN_REFRESHED
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('⚠️ Evento ignorado:', event);
+          return;
+        }
+        
+        await updateUserState(session);
+      }
+    );
+
+    return () => {
+      console.log('🧹 Limpando subscription...');
+      subscription.unsubscribe();
+    };
+  }, []); // Dependências vazias para executar apenas uma vez
+
+  // Timeout de emergência - força fim do loading após 4 segundos
+  useEffect(() => {
+    if (!loading) return;
+    
+    const emergencyTimeout = setTimeout(() => {
+      if (loading && mountedRef.current) {
+        console.log('🚨 TIMEOUT DE EMERGÊNCIA - FORÇANDO FIM DO LOADING');
+        forceStopLoading();
+      }
+    }, 4000);
+
+    return () => clearTimeout(emergencyTimeout);
+  }, [loading, forceStopLoading]);
+
+  // Cleanup no unmount
+  useEffect(() => {
+    return () => {
+      console.log('🧹 Limpando AuthProvider...');
+      mountedRef.current = false;
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (forceTimeoutRef.current) {
+        clearTimeout(forceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Login com Google
+  const signInWithGoogle = async () => {
+    try {
+      console.log('🔑 Iniciando login com Google...');
+      setLoadingWithTimeout(true, 30000);
+      setError(null);
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      console.error('❌ Erro no login com Google:', error);
+      setError(error.message || 'Erro ao fazer login com Google');
+      setLoadingWithTimeout(false);
+    }
+  };
+
+  // Logout
+  const signOut = async () => {
+    try {
+      console.log('🚪 AuthContext: Iniciando logout...');
+      setError(null);
+
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        throw error;
+      }
+      
+      console.log('✅ AuthContext: Logout do Supabase realizado');
+      
+      // Resetar estado imediatamente
+      setUser(null);
+      globalInitialized = false;
+      globalInitializing = false;
+      
+      console.log('✅ AuthContext: Estado resetado, logout concluído');
+    } catch (error: any) {
+      console.error('❌ AuthContext: Erro no logout:', error);
+      setError(error.message || 'Erro ao fazer logout');
+      throw error; // Re-throw para que o Header possa capturar
+    }
+  };
+
+  // Limpa erro
+  const clearError = () => {
+    setError(null);
+  };
+
+  const value = {
+    user,
+    loading,
+    signInWithGoogle,
+    signOut,
+    error,
+    clearError,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }; 

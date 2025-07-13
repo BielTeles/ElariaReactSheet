@@ -4,8 +4,10 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Users, Home, Menu } from 'lucide-react';
+import { BookOpen, Users, Home, Menu, User, LogOut } from 'lucide-react';
 import { ROUTES } from '../constants';
+import { useAuth } from '../contexts/AuthContext';
+import GoogleLoginButton from './GoogleLoginButton';
 
 /**
  * Item de navegação
@@ -22,16 +24,17 @@ interface NavItem {
  */
 const Header: React.FC = () => {
   const location = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-
+  const { user, signOut, loading } = useAuth();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
 
   /**
    * Verifica se a rota está ativa
    */
   const isActive = (path: string): boolean => {
     if (path === ROUTES.HOME) {
-    return location.pathname === path;
+      return location.pathname === path;
     }
     return location.pathname.startsWith(path);
   };
@@ -102,19 +105,150 @@ const Header: React.FC = () => {
   };
 
   /**
-   * Renderiza o menu do usuário (simplificado)
+   * Fecha menu do usuário quando clica fora
    */
-  const renderUserMenu = () => {
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      
+      // Verificar se o clique foi fora do menu E fora do botão do perfil
+      const isOutsideMenu = userMenuRef.current && !userMenuRef.current.contains(target);
+      const isOutsideProfileButton = profileButtonRef.current && !profileButtonRef.current.contains(target);
+      
+      if (isOutsideMenu && isOutsideProfileButton && isUserMenuOpen) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    // Adicionar listener apenas quando o menu estiver aberto
+    if (isUserMenuOpen) {
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 100);
+    }
+    
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isUserMenuOpen]);
+
+  /**
+   * Faz logout
+   */
+  const handleDropdownLogout = async () => {
+    // Fechar o menu imediatamente
+    setIsUserMenuOpen(false);
+    
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('❌ Erro ao fazer logout:', error);
+    }
+  };
+
+
+
+  /**
+   * Renderiza o menu do usuário autenticado
+   */
+  const renderAuthenticatedUserMenu = () => {
     return (
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-3">
+        {/* Botão Criar Personagem */}
         <Link
           to={ROUTES.CHARACTER_NEW}
           className="flex items-center space-x-2 px-4 py-2 bg-yellow-400 text-black rounded-lg hover:bg-yellow-300 transition-colors font-semibold"
         >
           <span className="hidden sm:inline">Criar Personagem</span>
         </Link>
+
+        {/* Menu do Usuário */}
+        <div className="relative" ref={userMenuRef}>
+          <button
+            ref={profileButtonRef}
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className="flex items-center space-x-2 px-3 py-2 text-white hover:bg-white/10 rounded-lg transition-colors border border-white/30 hover:border-yellow-400"
+            aria-label="Menu do usuário"
+          >
+            <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center">
+              {user?.avatar ? (
+                <img 
+                  src={user.avatar} 
+                  alt="Avatar" 
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <User size={16} className="text-black" />
+              )}
+            </div>
+            <span className="hidden md:inline font-semibold">
+              {user?.username || 'Usuário'}
+            </span>
+          </button>
+
+          {/* Dropdown Menu */}
+          {isUserMenuOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="text-sm font-semibold text-gray-800">
+                  {user?.username}
+                </p>
+                <p className="text-xs text-gray-600">
+                  {user?.email}
+                </p>
+              </div>
+              
+              <div
+                onClick={handleDropdownLogout}
+                className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors w-full text-left cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleDropdownLogout();
+                  }
+                }}
+              >
+                <LogOut size={16} />
+                <span>Sair</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
+  };
+
+  /**
+   * Renderiza o menu para usuário não autenticado
+   */
+  const renderGuestUserMenu = () => {
+    return (
+      <div className="flex items-center space-x-2">
+        <GoogleLoginButton
+          variant="outline"
+          size="sm"
+          className="!px-3 !py-2"
+        >
+          <span className="hidden sm:inline">Entrar</span>
+          <span className="sm:hidden">Login</span>
+        </GoogleLoginButton>
+      </div>
+    );
+  };
+
+  /**
+   * Renderiza o menu do usuário baseado no estado de autenticação
+   */
+  const renderUserMenu = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+        </div>
+      );
+    }
+
+    return user ? renderAuthenticatedUserMenu() : renderGuestUserMenu();
   };
 
   return (
@@ -163,9 +297,7 @@ const Header: React.FC = () => {
               className="text-white p-3 hover:bg-yellow-400 hover:text-black rounded-lg transition-colors border-2 border-white hover:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               aria-label="Abrir menu de navegação"
               aria-expanded="false"
-              // TODO: Implementar toggle do menu mobile
               onClick={() => {
-                // Por enquanto apenas mostra o menu sempre visível
                 console.log('Menu mobile clicado - implementar toggle');
               }}
             >
@@ -180,13 +312,13 @@ const Header: React.FC = () => {
           role="navigation"
           aria-label="Navegação mobile"
         >
-          <div className="flex justify-around">
+          <div className="flex justify-around mb-4">
             {navItems.map(item => {
               const active = isActive(item.path);
               const Icon = item.icon;
               
               return (
-              <Link
+                <Link
                   key={item.path}
                   to={item.path}
                   className={`
@@ -199,14 +331,19 @@ const Header: React.FC = () => {
                   `}
                   aria-label={item.ariaLabel}
                   aria-current={active ? 'page' : undefined}
-              >
+                >
                   <Icon size={24} aria-hidden="true" />
                   <span className="text-sm font-semibold">
                     {item.label}
                   </span>
-              </Link>
+                </Link>
               );
             })}
+          </div>
+          
+          {/* Menu do usuário mobile */}
+          <div className="flex justify-center">
+            {renderUserMenu()}
           </div>
         </nav>
       </div>

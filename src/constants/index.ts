@@ -204,9 +204,6 @@ export const IMAGE_CONFIG = {
  */
 export const ROUTES = {
   HOME: '/',
-  LOGIN: '/login',
-  REGISTER: '/register',
-  PROFILE: '/profile',
   CHARACTERS: '/characters',
   CHARACTER_NEW: '/characters/new',
   CHARACTER_DETAIL: '/characters/:id',
@@ -214,64 +211,4 @@ export const ROUTES = {
   REFERENCE: '/reference',
 } as const;
 
-/**
- * Configurações de autenticação
- */
-export const AUTH_CONFIG = {
-  SESSION_DURATION: 24 * 60 * 60 * 1000, // 24 horas em millisegundos
-  REMEMBER_ME_DURATION: 30 * 24 * 60 * 60 * 1000, // 30 dias em millisegundos
-  MIN_PASSWORD_LENGTH: 6,
-  MAX_USERNAME_LENGTH: 20,
-  PASSWORD_PATTERN: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{6,}$/,
-} as const;
-
-/**
- * Mensagens de erro de autenticação
- */
-export const AUTH_ERROR_MESSAGES = {
-  INVALID_CREDENTIALS: 'Email ou senha incorretos',
-  USER_NOT_FOUND: 'Usuário não encontrado',
-  EMAIL_ALREADY_EXISTS: 'Este email já está em uso',
-  USERNAME_ALREADY_EXISTS: 'Este nome de usuário já está em uso',
-  WEAK_PASSWORD: 'A senha deve ter pelo menos 6 caracteres, incluindo uma letra maiúscula, uma minúscula e um número',
-  PASSWORDS_DONT_MATCH: 'As senhas não coincidem',
-  REQUIRED_EMAIL: 'Email é obrigatório',
-  REQUIRED_PASSWORD: 'Senha é obrigatória',
-  REQUIRED_USERNAME: 'Nome de usuário é obrigatório',
-  INVALID_EMAIL: 'Email inválido',
-  SESSION_EXPIRED: 'Sessão expirada. Faça login novamente',
-  LOGIN_REQUIRED: 'Você precisa estar logado para acessar esta página',
-} as const;
-
-/**
- * Mensagens de sucesso de autenticação
- */
-export const AUTH_SUCCESS_MESSAGES = {
-  LOGIN_SUCCESS: 'Login realizado com sucesso',
-  REGISTER_SUCCESS: 'Conta criada com sucesso',
-  LOGOUT_SUCCESS: 'Logout realizado com sucesso',
-  PROFILE_UPDATED: 'Perfil atualizado com sucesso',
-} as const;
-
-/**
- * Configurações de migração de dados
- */
-export const MIGRATION_CONFIG = {
-  BATCH_SIZE: 10,
-  DELAY_BETWEEN_REQUESTS: 100, // ms
-  MAX_RETRIES: 3,
-  TIMEOUT: 30000, // 30 segundos
-} as const;
-
-/**
- * Mensagens de migração
- */
-export const MIGRATION_MESSAGES = {
-  NO_LOCAL_DATA: 'Nenhum dado local encontrado para migrar',
-  MIGRATION_SUCCESS: 'Migração concluída com sucesso',
-  MIGRATION_PARTIAL: 'Migração parcialmente concluída',
-  MIGRATION_FAILED: 'Falha na migração',
-  BACKUP_CREATED: 'Backup criado com sucesso',
-  BACKUP_FAILED: 'Falha ao criar backup',
-  DATA_CLEARED: 'Dados locais removidos após migração',
-} as const; 
+ 
