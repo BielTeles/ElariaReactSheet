@@ -4,28 +4,23 @@
 
 import { supabase } from './supabase';
 import { 
-  CampaignSettings 
-} from '../types/database';
-import {
-  CampaignWithDetails,
-  CreateCampaignData,
+  CampaignWithDetails, 
+  CreateCampaignData, 
   UpdateCampaignData,
   CampaignInvite,
   ProcessInviteResult,
   CampaignCharacter,
   CombatTracker,
-  CombatParticipant,
   CreateCombatParticipantData
 } from '../types/campaign';
 import { CAMPAIGN_CONFIG, CAMPAIGN_MESSAGES } from '../constants';
 
 /**
- * Serviço para gerenciamento de campanhas
+ * Serviço para gerenciar campanhas
  */
 export class CampaignService {
-  
   // ===================================================================
-  // OPERAÇÕES BÁSICAS DE CAMPANHA
+  // CRUD DE CAMPANHAS
   // ===================================================================
 
   /**
@@ -37,7 +32,7 @@ export class CampaignService {
         .from('campaigns')
         .select(`
           *,
-          profiles!campaigns_owner_id_fkey (
+          profiles (
             username,
             display_name,
             avatar_url
@@ -65,7 +60,7 @@ export class CampaignService {
         .from('campaigns')
         .select(`
           *,
-          profiles!campaigns_owner_id_fkey (
+          profiles (
             username,
             display_name,
             avatar_url
@@ -75,12 +70,9 @@ export class CampaignService {
         .eq('is_active', true)
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-      }
+      if (error) throw error;
 
-      return this.transformCampaignData(data);
+      return data ? this.transformCampaignData(data) : null;
     } catch (error) {
       console.error('Erro ao buscar campanha:', error);
       throw error;
@@ -113,7 +105,7 @@ export class CampaignService {
         })
         .select(`
           *,
-          profiles!campaigns_owner_id_fkey (
+          profiles (
             username,
             display_name,
             avatar_url
@@ -143,18 +135,18 @@ export class CampaignService {
     updates: UpdateCampaignData
   ): Promise<CampaignWithDetails> {
     try {
-      // Validar dados
-      if (updates.name) {
-        this.validateCampaignData({ name: updates.name, description: updates.description || '' });
-      }
-
       const { data, error } = await supabase
         .from('campaigns')
-        .update(updates)
+        .update({
+          name: updates.name,
+          description: updates.description,
+          settings: updates.settings,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', campaignId)
         .select(`
           *,
-          profiles!campaigns_owner_id_fkey (
+          profiles (
             username,
             display_name,
             avatar_url
@@ -168,7 +160,8 @@ export class CampaignService {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         await this.logActivity(user.id, 'campaign_updated', 'campaign', campaignId, {
-          updates: Object.keys(updates)
+          campaign_name: data.name,
+          updated_fields: Object.keys(updates)
         });
       }
 
@@ -218,20 +211,7 @@ export class CampaignService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Gerar código único
-      let inviteCode: string;
-      let attempts = 0;
-      const maxAttempts = 10;
-
-      do {
-        inviteCode = this.generateInviteCode();
-        attempts++;
-      } while (attempts < maxAttempts && await this.inviteCodeExists(inviteCode));
-
-      if (attempts >= maxAttempts) {
-        throw new Error('Não foi possível gerar um código de convite único');
-      }
-
+      const inviteCode = this.generateInviteCode();
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + expiryDays);
 
@@ -242,13 +222,15 @@ export class CampaignService {
           invite_code: inviteCode,
           created_by: user.id,
           expires_at: expiresAt.toISOString(),
-          max_uses: maxUses
+          max_uses: maxUses,
+          current_uses: 0,
+          is_active: true
         })
         .select(`
           *,
-          campaigns!campaign_invites_campaign_id_fkey (
+          campaigns (
             name,
-            profiles!campaigns_owner_id_fkey (
+            profiles (
               username
             )
           )
@@ -257,11 +239,18 @@ export class CampaignService {
 
       if (error) throw error;
 
+      // Registrar atividade
+      await this.logActivity(user.id, 'invite_created', 'campaign', campaignId, {
+        invite_code: inviteCode,
+        max_uses: maxUses,
+        expires_at: expiresAt.toISOString()
+      });
+
       return {
         id: data.id,
         campaign_id: data.campaign_id,
-        campaign_name: data.campaigns.name,
-        master_name: data.campaigns.profiles.username,
+        campaign_name: data.campaigns?.name || '',
+        master_name: data.campaigns?.profiles?.username || '',
         invite_code: data.invite_code,
         expires_at: data.expires_at,
         max_uses: data.max_uses,
@@ -276,7 +265,7 @@ export class CampaignService {
   }
 
   /**
-   * Processar convite (jogador entra na campanha)
+   * Processar convite de campanha
    */
   static async processInvite(
     inviteCode: string,
@@ -291,9 +280,9 @@ export class CampaignService {
         .from('campaign_invites')
         .select(`
           *,
-          campaigns!campaign_invites_campaign_id_fkey (
+          campaigns (
             *,
-            profiles!campaigns_owner_id_fkey (
+            profiles (
               username,
               display_name,
               avatar_url
@@ -320,7 +309,8 @@ export class CampaignService {
 
       // Verificar se o usuário já é membro
       const campaign = invite.campaigns;
-      const isAlreadyMember = campaign.members.includes(user.id);
+      const members = Array.isArray(campaign.members) ? campaign.members : [];
+      const isAlreadyMember = members.includes(user.id);
 
       if (isAlreadyMember) {
         return { 
@@ -332,7 +322,7 @@ export class CampaignService {
       }
 
       // Adicionar usuário à campanha
-      const updatedMembers = [...campaign.members, user.id];
+      const updatedMembers = [...members, user.id];
       
       const { error: updateError } = await supabase
         .from('campaigns')
@@ -523,21 +513,30 @@ export class CampaignService {
         .insert({
           campaign_id: campaignId,
           name,
-          created_by: user.id
+          created_by: user.id,
+          current_round: 1,
+          current_turn: 0,
+          participants: [],
+          is_active: true
         })
         .select('*')
         .single();
 
       if (error) throw error;
 
+      // Registrar atividade
+      await this.logActivity(user.id, 'combat_tracker_created', 'campaign', campaignId, {
+        tracker_name: name
+      });
+
       return {
         id: data.id,
         campaign_id: data.campaign_id,
         name: data.name,
-        is_active: data.is_active,
         current_round: data.current_round,
         current_turn: data.current_turn,
-        participants: data.participants || [],
+        participants: data.participants,
+        is_active: data.is_active,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -555,37 +554,28 @@ export class CampaignService {
     participantData: CreateCombatParticipantData
   ): Promise<CombatTracker> {
     try {
-      // Buscar rastreador atual
+      // Buscar tracker atual
       const { data: tracker, error: fetchError } = await supabase
         .from('combat_trackers')
         .select('*')
         .eq('id', trackerId)
         .single();
 
-      if (fetchError || !tracker) throw fetchError || new Error('Rastreador não encontrado');
+      if (fetchError || !tracker) throw new Error('Rastreador não encontrado');
 
-      // Criar novo participante
-      const newParticipant: CombatParticipant = {
-        id: crypto.randomUUID(),
-        type: participantData.type,
-        name: participantData.name,
-        character_id: participantData.character_id,
-        initiative: participantData.initiative || 0,
+      // Adicionar novo participante
+      const participants = [...tracker.participants, {
+        id: Date.now().toString(),
+        ...participantData,
         current_hp: participantData.max_hp,
-        max_hp: participantData.max_hp,
-        current_mp: participantData.max_mp,
-        max_mp: participantData.max_mp,
         conditions: [],
-        notes: participantData.notes || '',
-        is_active: true
-      };
+        notes: ''
+      }];
 
-      const updatedParticipants = [...(tracker.participants || []), newParticipant];
-
-      // Atualizar rastreador
+      // Atualizar tracker
       const { data, error } = await supabase
         .from('combat_trackers')
-        .update({ participants: updatedParticipants })
+        .update({ participants })
         .eq('id', trackerId)
         .select('*')
         .single();
@@ -596,10 +586,10 @@ export class CampaignService {
         id: data.id,
         campaign_id: data.campaign_id,
         name: data.name,
-        is_active: data.is_active,
         current_round: data.current_round,
         current_turn: data.current_turn,
-        participants: data.participants || [],
+        participants: data.participants,
+        is_active: data.is_active,
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -610,31 +600,34 @@ export class CampaignService {
   }
 
   // ===================================================================
-  // FUNÇÕES AUXILIARES
+  // MÉTODOS AUXILIARES
   // ===================================================================
 
   /**
    * Transformar dados da campanha
    */
   private static transformCampaignData(data: any): CampaignWithDetails {
+    const members = Array.isArray(data.members) ? data.members : [];
+    const characters = Array.isArray(data.characters) ? data.characters : [];
+    
     return {
       id: data.id,
       name: data.name,
       description: data.description,
       owner_id: data.owner_id,
-      members: data.members || [],
-      characters: data.characters || [],
+      members,
+      characters,
       settings: data.settings || this.getDefaultSettings(),
       is_active: data.is_active,
       created_at: data.created_at,
       updated_at: data.updated_at,
-      member_count: (data.members || []).length,
-      character_count: (data.characters || []).length,
+      member_count: members.length,
+      character_count: characters.length,
       last_activity: data.updated_at,
       master_info: {
-        username: data.profiles?.username || 'Desconhecido',
-        display_name: data.profiles?.display_name,
-        avatar_url: data.profiles?.avatar_url
+        username: data.profiles?.username || '',
+        display_name: data.profiles?.display_name || '',
+        avatar_url: data.profiles?.avatar_url || ''
       }
     };
   }
@@ -642,11 +635,11 @@ export class CampaignService {
   /**
    * Configurações padrão da campanha
    */
-  private static getDefaultSettings(): CampaignSettings {
+  private static getDefaultSettings(): any {
     return {
       is_public: false,
       allow_character_sharing: true,
-      max_characters_per_player: CAMPAIGN_CONFIG.MAX_CHARACTERS_PER_PLAYER,
+      max_characters_per_player: 3,
       auto_backup: true,
       rules: {
         allow_multiclass: true,
@@ -660,26 +653,24 @@ export class CampaignService {
    * Validar dados da campanha
    */
   private static validateCampaignData(data: CreateCampaignData): void {
-    if (!data.name || data.name.trim().length === 0) {
-      throw new Error('Nome da campanha é obrigatório');
+    if (!data.name || data.name.trim().length < 3) {
+      throw new Error('Nome da campanha deve ter pelo menos 3 caracteres');
     }
-
-    if (data.name.length > CAMPAIGN_CONFIG.MAX_NAME_LENGTH) {
-      throw new Error(`Nome da campanha deve ter no máximo ${CAMPAIGN_CONFIG.MAX_NAME_LENGTH} caracteres`);
+    if (data.name.length > 100) {
+      throw new Error('Nome da campanha não pode ter mais de 100 caracteres');
     }
-
-    if (data.description && data.description.length > CAMPAIGN_CONFIG.MAX_DESCRIPTION_LENGTH) {
-      throw new Error(`Descrição deve ter no máximo ${CAMPAIGN_CONFIG.MAX_DESCRIPTION_LENGTH} caracteres`);
+    if (data.description && data.description.length > 500) {
+      throw new Error('Descrição não pode ter mais de 500 caracteres');
     }
   }
 
   /**
-   * Gerar código de convite
+   * Gerar código de convite único
    */
   private static generateInviteCode(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
-    for (let i = 0; i < CAMPAIGN_CONFIG.INVITE_CODE_LENGTH; i++) {
+    for (let i = 0; i < 8; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
@@ -693,10 +684,10 @@ export class CampaignService {
       .from('campaign_invites')
       .select('id')
       .eq('invite_code', code)
-      .eq('is_active', true)
-      .single();
+      .limit(1);
 
-    return !error && !!data;
+    if (error) return false;
+    return data && data.length > 0;
   }
 
   /**
@@ -717,10 +708,12 @@ export class CampaignService {
           action,
           target_type: targetType,
           target_id: targetId,
-          details
+          details,
+          timestamp: new Date().toISOString()
         });
     } catch (error) {
-      console.warn('Erro ao registrar atividade:', error);
+      console.error('Erro ao registrar atividade:', error);
+      // Não propagar erro de log
     }
   }
 } 
