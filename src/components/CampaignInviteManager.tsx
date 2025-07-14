@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Copy, Plus, Calendar, Share2, XCircle, AlertCircle, CheckCircle, Eye } from 'lucide-react';
 import { CampaignService } from '../services/campaignService';
 import { CampaignInvite } from '../types/campaign';
 import { CAMPAIGN_CONFIG } from '../constants';
-import { 
-  Plus, Share2, Copy, Clock, Users, CheckCircle, 
-  XCircle, AlertCircle, Trash2, Eye, EyeOff
-} from 'lucide-react';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 
 interface CampaignInviteManagerProps {
   campaignId: string;

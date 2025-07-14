@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { CampaignService } from '../services/campaignService';
 import { CharacterStorage } from '../utils/characterStorage';
 import { ProcessInviteResult } from '../types/campaign';
+import { Character } from '../types/character';
+import { Button } from '../components/ui/button';
+import { Card } from '../components/ui/card';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { ROUTES } from '../constants';
-import { 
-  CheckCircle, AlertCircle, XCircle, Users, Crown, 
-  Loader, ArrowRight, Home, UserPlus, Scroll
-} from 'lucide-react';
+import { CheckCircle, Users, Scroll, ArrowLeft, UserPlus, Loader, XCircle, Crown, ArrowRight, Home } from 'lucide-react';
 
 const CampaignInvite: React.FC = () => {
   const { code } = useParams<{ code: string }>();

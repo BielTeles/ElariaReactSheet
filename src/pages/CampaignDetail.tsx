@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { CampaignService } from '../services/campaignService';
 import { CampaignWithDetails } from '../types/campaign';
+import { Button } from '../components/ui/button';
+import { Card } from '../components/ui/card';
 import CampaignInviteManager from '../components/CampaignInviteManager';
 import CampaignCharacterManager from '../components/CampaignCharacterManager';
+import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { ROUTES } from '../constants';
-import { 
-  ArrowLeft, Crown, Users, Settings, Share2, 
-  Calendar, MapPin, Shield, Scroll, Swords,
-  AlertCircle, CheckCircle, Edit, Save, X
-} from 'lucide-react';
+import { ArrowLeft, Users, Settings, Scroll, AlertCircle, X, Save, Edit, Crown, CheckCircle, Swords, Calendar } from 'lucide-react';
 
 const CampaignDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

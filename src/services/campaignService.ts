@@ -377,9 +377,9 @@ export class CampaignService {
         .from('campaign_invites')
         .select(`
           *,
-          campaigns!campaign_invites_campaign_id_fkey (
+          campaigns (
             name,
-            profiles!campaigns_owner_id_fkey (
+            profiles (
               username
             )
           )
@@ -393,8 +393,8 @@ export class CampaignService {
       return data?.map(invite => ({
         id: invite.id,
         campaign_id: invite.campaign_id,
-        campaign_name: invite.campaigns.name,
-        master_name: invite.campaigns.profiles.username,
+        campaign_name: invite.campaigns?.name || '',
+        master_name: invite.campaigns?.profiles?.username || '',
         invite_code: invite.invite_code,
         expires_at: invite.expires_at,
         max_uses: invite.max_uses,
@@ -452,10 +452,10 @@ export class CampaignService {
         .from('campaign_characters')
         .select(`
           *,
-          characters!campaign_characters_character_id_fkey (
+          characters (
             *
           ),
-          profiles!campaign_characters_user_id_fkey (
+          profiles (
             username,
             display_name,
             avatar_url
@@ -471,16 +471,16 @@ export class CampaignService {
         id: item.id,
         user_id: item.user_id,
         campaign_id: item.campaign_id,
-        character_data: item.characters.data,
+        character_data: item.characters?.data || {},
         character_state: {
-          currentHP: item.characters.data.hitPoints || 0,
-          currentMP: item.characters.data.manaPoints || 0,
-          currentVigor: item.characters.data.vigorPoints || 0,
+          currentHP: item.characters?.data?.hitPoints || 0,
+          currentMP: item.characters?.data?.manaPoints || 0,
+          currentVigor: item.characters?.data?.vigorPoints || 0,
           tempHP: 0,
           conditions: [],
           rollHistory: [],
           notes: [],
-          currentMoney: item.characters.data.remainingGold || 0,
+          currentMoney: item.characters?.data?.remainingGold || 0,
           transactions: [],
           inventory: [],
           equippedWeapon: undefined,
@@ -489,9 +489,9 @@ export class CampaignService {
           equippedAccessories: []
         },
         player_info: {
-          username: item.profiles.username,
-          display_name: item.profiles.display_name,
-          avatar_url: item.profiles.avatar_url
+          username: item.profiles?.username || '',
+          display_name: item.profiles?.display_name || '',
+          avatar_url: item.profiles?.avatar_url || ''
         },
         linked_at: item.linked_at,
         is_active: item.is_active,

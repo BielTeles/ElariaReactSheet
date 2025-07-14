@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { User, Plus, Eye, Shield, AlertCircle, Users, Settings, Heart, Zap, Sword } from 'lucide-react';
 import { CampaignService } from '../services/campaignService';
 import { CharacterStorage } from '../utils/characterStorage';
 import { CampaignCharacter } from '../types/campaign';
+import { Character } from '../types/character';
+import { Button } from './ui/button';
+import { Card } from './ui/card';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Users, Plus, Eye, Link, Unlink, Shield, 
-  Heart, Zap, Sword, Crown, User, AlertCircle,
-  CheckCircle, Settings, Trash2
-} from 'lucide-react';
+import { useToast } from '../contexts/ToastContext';
 
 interface CampaignCharacterManagerProps {
   campaignId: string;
