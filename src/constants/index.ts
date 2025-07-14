@@ -5,7 +5,7 @@
 /**
  * Versão atual da aplicação
  */
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.3.0';
 
 /**
  * Chaves para localStorage
@@ -209,6 +209,43 @@ export const ROUTES = {
   CHARACTER_DETAIL: '/characters/:id',
   CHARACTER_SHEET: '/character-sheet',
   REFERENCE: '/reference',
+  CAMPAIGNS: '/campaigns',
+  CAMPAIGN_NEW: '/campaigns/new',
+  CAMPAIGN_DETAIL: '/campaigns/:id',
+  CAMPAIGN_INVITE: '/campaigns/invite/:code',
+  CAMPAIGN_COMBAT: '/campaigns/:id/combat',
+} as const;
+
+/**
+ * Configurações de campanhas
+ */
+export const CAMPAIGN_CONFIG = {
+  MAX_NAME_LENGTH: 100,
+  MAX_DESCRIPTION_LENGTH: 500,
+  MAX_MEMBERS: 8,
+  MAX_CHARACTERS_PER_PLAYER: 3,
+  INVITE_CODE_LENGTH: 8,
+  INVITE_EXPIRY_DAYS: 7,
+  MAX_COMBAT_PARTICIPANTS: 20,
+  AUTO_SAVE_INTERVAL: 10000, // 10 segundos
+} as const;
+
+/**
+ * Mensagens de campanha
+ */
+export const CAMPAIGN_MESSAGES = {
+  CREATED: 'Campanha criada com sucesso',
+  UPDATED: 'Campanha atualizada com sucesso',
+  DELETED: 'Campanha excluída com sucesso',
+  JOINED: 'Você entrou na campanha',
+  LEFT: 'Você saiu da campanha',
+  INVITE_SENT: 'Convite enviado com sucesso',
+  INVITE_EXPIRED: 'Este convite expirou',
+  INVITE_INVALID: 'Convite inválido',
+  CHARACTER_LINKED: 'Personagem vinculado à campanha',
+  CHARACTER_UNLINKED: 'Personagem desvinculado da campanha',
+  COMBAT_STARTED: 'Combate iniciado',
+  COMBAT_ENDED: 'Combate finalizado',
 } as const;
 
  

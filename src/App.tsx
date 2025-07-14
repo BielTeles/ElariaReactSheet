@@ -19,6 +19,9 @@ const CharacterCreation = lazy(() => import('./pages/CharacterCreation'));
 const CharacterSheet = lazy(() => import('./pages/CharacterSheet'));
 const FinalizedCharacterSheet = lazy(() => import('./components/CharacterSheet/CharacterSheet'));
 const ReferenceGuide = lazy(() => import('./pages/ReferenceGuide'));
+const CampaignList = lazy(() => import('./pages/CampaignList'));
+const CampaignInvite = lazy(() => import('./pages/CampaignInvite'));
+const CampaignDetail = lazy(() => import('./pages/CampaignDetail'));
 
 /**
  * Componente de Loading para Suspense
@@ -93,8 +96,27 @@ function AppContent() {
                   } 
                 />
                 
+                {/* Rotas de campanhas - requerem autenticação */}
+                <Route 
+                  path={ROUTES.CAMPAIGNS} 
+                  element={
+                    <ProtectedRoute>
+                      <CampaignList />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path={ROUTES.CAMPAIGN_DETAIL} 
+                  element={
+                    <ProtectedRoute>
+                      <CampaignDetail />
+                    </ProtectedRoute>
+                  } 
+                />
+                
                 {/* Rotas abertas - não requerem autenticação */}
                 <Route path={ROUTES.REFERENCE} element={<ReferenceGuide />} />
+                <Route path={ROUTES.CAMPAIGN_INVITE} element={<CampaignInvite />} />
                 
                 {/* Rota 404 */}
                 <Route 

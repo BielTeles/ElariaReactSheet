@@ -4,7 +4,7 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, Users, Home, Menu, User, LogOut } from 'lucide-react';
+import { BookOpen, Users, Home, Menu, User, LogOut, Scroll } from 'lucide-react';
 import { ROUTES } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import GoogleLoginButton from './GoogleLoginButton';
@@ -54,6 +54,12 @@ const Header: React.FC = () => {
       label: 'Personagens', 
       icon: Users,
       ariaLabel: 'Ver lista de personagens'
+    },
+    { 
+      path: ROUTES.CAMPAIGNS, 
+      label: 'Campanhas', 
+      icon: Scroll,
+      ariaLabel: 'Ver lista de campanhas'
     },
     { 
       path: ROUTES.REFERENCE, 
